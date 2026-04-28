@@ -55,6 +55,11 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # `RLSMiddleware` resolve o tenant a partir do header `X-Clinic-Slug`
+    # (painel) ou do canal de webhook (futuro). Roda DEPOIS de auth
+    # porque tabelas auth_* não são tenant-owned, e ANTES da view
+    # porque toda query de domínio depende de `app.clinica_id` setado.
+    "apps.core.middleware.RLSMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
