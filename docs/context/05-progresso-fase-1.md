@@ -2,7 +2,7 @@
 name: Progresso da Fase 1
 description: Estado atual da execução da Fase 1 — checklist com o que está feito, em andamento e pendente.
 status: em-andamento
-ultima_atualizacao: 2026-04-27
+ultima_atualizacao: 2026-04-28
 ---
 
 # Progresso — Fase 1 (Fundação Django)
@@ -34,28 +34,28 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ✅ `.gitignore` para Python+Django+Docker+uv com camadas anti-vazamento de secret
 - ✅ `CLAUDE.md` com regras e estilo de trabalho
 - ✅ Plano + memórias da sessão anterior copiados para `docs/plans/` e `docs/context/`
-- ❌ `uv add` das dependências principais (Django, Ninja, psycopg, redis, celery, anthropic, langfuse, etc)
+- ✅ `uv add` das dependências principais (Django 6, Ninja, psycopg, redis, celery, anthropic, openai, langfuse, pgtrigger, etc) — `pyproject.toml` + `uv.lock` versionados
 
 ### 2. Django scaffold
-- ❌ `django-admin startproject config medchat/` (ou flat — confirmar layout)
-- ❌ Settings modular `config/settings/{base,dev,prod,test}.py`
-- ❌ `django-environ` lendo `.env`
-- ❌ `.env.example` versionado
+- ✅ `django-admin startproject config .` (layout flat, raiz do repo)
+- ✅ Settings modular `config/settings/{base,dev,prod,test}.py`
+- ✅ `django-environ` lendo `.env`
+- ✅ `.env.example` versionado
 
 ### 3. Estrutura de apps Django (9 apps)
-- ❌ `apps/core` — TenantAwareModel, RLSMiddleware, with_tenant
-- ❌ `apps/clinics` — Clinica, ClinicaCanal, ClinicaPolitica
-- ❌ `apps/patients` — Paciente
-- ❌ `apps/catalog` — Especialidade, Medico, Convenio, Disponibilidade
-- ❌ `apps/appointments` — Agendamento + exclusion constraint
-- ❌ `apps/conversations` — Conversa, Mensagem, Handoff
+- ✅ `apps/core` — `TenantAwareModel`, `RLSMiddleware`, `with_tenant`, migration RLS
+- ⏳ `apps/clinics` — `Clinica` ✅; `ClinicaCanal` e `ClinicaPolitica` ❌
+- ❌ `apps/patients` — `Paciente`
+- ❌ `apps/catalog` — `Especialidade`, `Medico`, `Convenio`, `Disponibilidade`
+- ❌ `apps/appointments` — `Agendamento` + exclusion constraint
+- ❌ `apps/conversations` — `Conversa`, `Mensagem`, `Handoff`
 - ❌ `apps/bot` — scaffolding (Fase 2 implementa)
 - ❌ `apps/channels` — providers WhatsApp + webhook entry
 - ❌ `apps/observability` — Langfuse client, health, metrics
 
 ### 4. Documentação pedagógica
 - ❌ `docs/adr/0001-django-vs-n8n.md`
-- ❌ `docs/adr/0002-rls-vs-schema.md`
+- ✅ `docs/adr/0002-rls-vs-schema.md`
 - ❌ `docs/adr/0003-anthropic-openrouter.md`
 - ❌ `docs/ai-engineering/01-por-que-nao-n8n.md`
 - ❌ `docs/ai-engineering/02-primeira-chamada-anthropic.md`
@@ -63,19 +63,21 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ❌ `docs/ai-engineering/04-prompt-caching-anthropic.md`
 - ❌ `docs/ai-engineering/05-tool-use-fundamentos.md`
 - ❌ `docs/ai-engineering/06-observabilidade-langfuse.md`
-- ❌ `docs/ai-engineering/07-multi-tenant-rls-postgres.md`
+- ✅ `docs/ai-engineering/07-multi-tenant-rls-postgres.md`
 
 ### 5. Stack de containers
-- ❌ `Dockerfile` (python:3.13-slim + uv)
-- ❌ `docker-compose.yml` com 7 serviços: postgres (pgvector/pg17), redis, langfuse-db, langfuse, web, worker, beat
-- ❌ `Makefile` com atalhos (`up`, `down`, `migrate`, `test`, `lint`, `shell`, `logs`)
+- ✅ `Dockerfile` (python:3.13-slim + uv 0.11.8 com BuildKit cache mounts)
+- ✅ `docker-compose.yml` com 6 serviços: postgres (pgvector/pg17), redis, langfuse-db, langfuse, web, worker, beat
+- ✅ `Makefile` com atalhos (`up`, `down`, `build`, `logs`, `migrate`, `shell`, `test`, `lint`, `format`, `clean`)
 - ❌ `pytest.ini` + `conftest.py` raiz com fixtures multi_tenant
 
 ### 6. Multi-tenancy (RLS)
-- ❌ `apps/core/models.py` — `TenantAwareModel` abstract
-- ❌ `apps/core/middleware.py` — `RLSMiddleware`
-- ❌ `apps/core/tenancy.py` — decorator `with_tenant` para Celery
-- ❌ Migrations base: `clinicas`, `clinica_canais`, `clinica_politicas` com policies RLS
+- ✅ `apps/core/models.py` — `TenantAwareModel` abstract com validação no `save()`
+- ✅ `apps/core/middleware.py` — `RLSMiddleware` (resolve via `X-Clinic-Slug`; fail-loud 500)
+- ✅ `apps/core/tenancy.py` — `tenant_session` (context manager) + `@with_tenant` (decorator Celery)
+- ✅ `apps/core/migrations/0001_rls_setup.py` — roles `app_readwrite`/`app_jobs` + helper `apply_rls_policy()`
+- ✅ Migration base de `clinicas` (sem RLS — é raiz da tenancy, intencional)
+- ❌ Migrations base: `clinica_canais`, `clinica_politicas` com policies RLS
 
 ### 7. Migrations de domínio
 - ❌ `pacientes`, `especialidades`, `medicos`, `convenios`, `medico_convenios`, `medico_disponibilidades`
@@ -122,11 +124,33 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 
 ## Próximo passo concreto
 
-**Adicionar dependências via `uv add`.** Lista completa no plano (Passo 1 do "Passo-a-passo de execução"). Sugestão de ordem:
+**Subir o stack docker-compose e validar a fundação core num Postgres real.**
 
-1. Pacotes principais (Django, Ninja, psycopg, etc) — `uv add ...`
-2. Pacotes dev (pytest, ruff) — `uv add --dev ...`
-3. Verificar `uv.lock` foi gerado e commitar
-4. Pausa pedagógica: explicar para que serve cada dependência principal
+```bash
+make up                                    # postgres + redis + langfuse + web + worker + beat
+make migrate                               # aplica core/0001_rls_setup + clinics/0001_initial
+make shell                                 # criar uma Clinica de teste e validar admin
+```
 
-Em paralelo (opcional, mas pedagogicamente útil): criar **ADR-001** (Django vs n8n) e **ADR-002** (RLS vs schema-per-tenant) usando o template padrão (Status, Context, Decision, Consequences). Documentar enquanto a decisão ainda está fresca.
+Depois disso, próximas frentes (em ordem sugerida):
+
+1. **`conftest.py` raiz + fixtures multi-tenant** — `clinica_a`,
+   `clinica_b`, `set_app_clinica_id()`, `pytest.ini` apontando pra
+   `config.settings.test`. Sem isso, nenhum teste de RLS é escrevível.
+2. **Tabelas tenant-owned com RLS aplicada via helper:**
+   - `apps/clinics`: `ClinicaCanal`, `ClinicaPolitica`.
+   - `apps/patients`: `Paciente`.
+   - `apps/catalog`: `Especialidade`, `Medico`, `Convenio`,
+     `MedicoConvenio`, `MedicoDisponibilidade`.
+   - Cada migration: `CreateModel` + `RunSQL("SELECT
+     apply_rls_policy('<tabela>');")`.
+3. **Testes de RLS isolation** (≥ 1 caso por tabela tenant-owned)
+   antes de considerar a fundação fechada.
+4. **ADR-001** (Django vs n8n) e **ADR-003** (Anthropic + OpenRouter)
+   para fechar o trio fundacional.
+
+Critério para encerrar a Fase 1 (todos os 10 pontos do plano em
+[`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1.md)
+seção "Critérios de conclusão"). Falta ainda webhook WhatsApp,
+Evolution provider, Langfuse client, health endpoint, eco MVP e
+testes E2E.
