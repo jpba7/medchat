@@ -1,0 +1,110 @@
+name: medchat
+
+x-django-base: &django-base
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.dev
+    DATABASE_URL: postgres://medchat:medchat@postgres:5432/medchat
+    REDIS_URL: redis://redis:6379/0
+    CELERY_BROKER_URL: redis://redis:6379/1
+    CELERY_RESULT_BACKEND: redis://redis:6379/2
+  volumes:
+    - .:/app
+    - venv:/app/.venv
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: medchat-postgres
+    environment:
+      POSTGRES_USER: medchat
+      POSTGRES_PASSWORD: medchat
+      POSTGRES_DB: medchat
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medchat -d medchat"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: medchat-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  langfuse-db:
+    image: postgres:16-alpine
+    container_name: medchat-langfuse-db
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse
+      POSTGRES_DB: langfuse
+    volumes:
+      - langfusedata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse -d langfuse"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  langfuse:
+    image: langfuse/langfuse:2
+    container_name: medchat-langfuse
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://langfuse:langfuse@langfuse-db:5432/langfuse
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-dev-only-change-in-prod-32chars-min}
+      SALT: ${LANGFUSE_SALT:-dev-only-salt-change-in-prod-32chars}
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_INIT_ORG_NAME: MedChat
+      LANGFUSE_INIT_PROJECT_NAME: medchat-dev
+    ports:
+      - "3000:3000"
+
+  web:
+    <<: *django-base
+    container_name: medchat-web
+    command: uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+
+  worker:
+    <<: *django-base
+    container_name: medchat-worker
+    command: uv run celery -A config worker -l info
+
+  beat:
+    <<: *django-base
+    container_name: medchat-beat
+    command: uv run celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+volumes:
+  pgdata:
+  redisdata:
+  langfusedata:
+  venv:
