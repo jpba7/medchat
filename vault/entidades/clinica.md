@@ -1,5 +1,5 @@
 ---
-name: clinica
+title: clinica
 type: entidade
 tags: [tenant, raiz, clinica]
 ---

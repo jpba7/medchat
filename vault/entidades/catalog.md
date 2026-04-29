@@ -1,5 +1,5 @@
 ---
-name: catalog
+title: catalog
 type: entidade
 tags: [tenant-aware, catalog, vocabulario, agendamento]
 ---

@@ -1,5 +1,5 @@
 ---
-name: medchat-superuser-bypassrls
+title: medchat-superuser-bypassrls
 type: aprendizado
 tags: [rls, postgres, seguranca, prod-blocker]
 ---

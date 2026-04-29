@@ -1,5 +1,5 @@
 ---
-name: template-diario
+title: template-diario
 type: diario
 tags: []
 ---

@@ -1,5 +1,5 @@
 ---
-name: MOC
+title: MOC
 type: meta
 tags: [vault, indice]
 ---

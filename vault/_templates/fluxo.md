@@ -1,5 +1,5 @@
 ---
-name: template-fluxo
+title: template-fluxo
 type: fluxo
 tags: []
 ---

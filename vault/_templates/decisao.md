@@ -1,5 +1,5 @@
 ---
-name: template-decisao
+title: template-decisao
 type: decisao
 tags: []
 ---

@@ -1,5 +1,5 @@
 ---
-name: idempotencia-via-unique-parcial
+title: idempotencia-via-unique-parcial
 type: conceito-ai
 tags: [postgres, idempotencia, webhook, unique-parcial]
 ---

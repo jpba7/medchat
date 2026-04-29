@@ -1,5 +1,5 @@
 ---
-name: anthropic-sdk
+title: anthropic-sdk
 type: conceito-ai
 tags: [llm, anthropic, sdk]
 ---

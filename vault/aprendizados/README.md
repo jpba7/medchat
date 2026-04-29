@@ -1,5 +1,5 @@
 ---
-name: aprendizados-readme
+title: aprendizados-readme
 type: aprendizado
 tags: [readme]
 ---

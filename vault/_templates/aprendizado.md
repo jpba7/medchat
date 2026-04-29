@@ -1,5 +1,5 @@
 ---
-name: template-aprendizado
+title: template-aprendizado
 type: aprendizado
 tags: []
 ---

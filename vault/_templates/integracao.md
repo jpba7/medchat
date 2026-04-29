@@ -1,5 +1,5 @@
 ---
-name: template-integracao
+title: template-integracao
 type: integracao
 tags: []
 ---

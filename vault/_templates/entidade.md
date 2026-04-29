@@ -1,5 +1,5 @@
 ---
-name: template-entidade
+title: template-entidade
 type: entidade
 tags: []
 ---

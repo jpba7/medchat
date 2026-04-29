@@ -80,7 +80,7 @@ Liste tudo. **Não escreva nada ainda.** Espere o usuário responder.
 Pra cada candidato com aprovação `sim`:
 
 1. Use o template apropriado em `vault/_templates/` como base estrutural (não copie literal — preencha).
-2. Frontmatter mínimo: `name`, `type`, `tags` (opcional).
+2. Frontmatter mínimo: `title`, `type`, `tags` (opcional). **Sempre `title:`, nunca `name:`** — `title` é o campo canônico do Obsidian que renderiza o nome no graph view.
 3. Linguagem: pt-BR pra narrativa, identifiers preservados, termos de domínio em pt-BR.
 4. Use `Write` (nota nova) ou `Edit` (update).
 5. Atualize [`vault/MOC.md`](../../vault/MOC.md) se houver nota nova — adicione linha na seção apropriada.
