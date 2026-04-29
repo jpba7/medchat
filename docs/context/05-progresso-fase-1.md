@@ -47,7 +47,7 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ✅ `apps/clinics` — `Clinica`, `ClinicaCanal`, `ClinicaPolitica`
 - ✅ `apps/patients` — `Paciente`
 - ✅ `apps/catalog` — `Especialidade`, `Medico`, `Convenio`, `MedicoConvenio`, `MedicoDisponibilidade`
-- ❌ `apps/appointments` — `Agendamento` + exclusion constraint
+- ✅ `apps/appointments` — `Agendamento` + exclusion constraint anti-overlap (`EXCLUDE USING GIST` com `btree_gist`)
 - ❌ `apps/conversations` — `Conversa`, `Mensagem`, `Handoff`
 - ❌ `apps/bot` — scaffolding (Fase 2 implementa)
 - ❌ `apps/channels` — providers WhatsApp + webhook entry
@@ -82,7 +82,7 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 
 ### 7. Migrations de domínio
 - ✅ Onda 1 (cadastro): `clinica_canais`, `clinica_politicas`, `pacientes`, `especialidades`, `medicos`, `convenios`, `medico_convenios`, `medico_disponibilidades` — todas com RLS aplicada
-- ❌ `agendamentos` com exclusion constraint `btree_gist`
+- ✅ Onda 2 (`agendamentos`): `CheckConstraint` (inicio<fim) + `ExclusionConstraint` `EXCLUDE USING GIST (medico_id WITH =, tstzrange(inicio_em, fim_em) WITH &&) WHERE status != 'cancelado'` (extension `btree_gist`) + RLS aplicada
 - ❌ `conversas`, `mensagens` (unique `(canal_id, external_id)`), `handoffs`
 - ❌ `outbox`, `eventos_bot`
 
@@ -111,14 +111,14 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ❌ Health endpoint completo
 
 ### 12. Testes
-- ⏳ `tests/integration/test_rls.py` — **24 testes verdes**: 8 da fundação (roles, helpers, `tenant_session`, `@with_tenant`, `Clinica` global) + 8 de isolation cross-tenant (1 por tabela tenant-aware da Onda 1, com `SET LOCAL ROLE app_readwrite` para exercer RLS de verdade) + 8 de defesa em profundidade (`TenantAwareModel.save()` rejeita `clinica_id` ≠ `app.clinica_id`). Falta cobertura para Agendamento/Conversa/Mensagem/Handoff/Outbox/EventoBot quando esses modelos existirem.
+- ⏳ `tests/integration/test_rls.py` — **28 testes verdes**: 8 da fundação + 8 isolation cross-tenant Onda 1 + 8 defesa em profundidade Onda 1 + 4 de Agendamento (isolation, defesa em profundidade, exclusion constraint impede overlap real, cancelados liberam slot). Falta cobertura para Conversa/Mensagem/Handoff/Outbox/EventoBot quando esses modelos existirem.
 - ❌ `tests/integration/test_webhook_idempotency.py`
 - ❌ `tests/integration/test_evolution_provider.py`
 - ❌ `tests/fixtures/evolution_webhooks/` com payloads reais
 
 ### 13. Verificação end-to-end
 - ⏳ `make up` em <5min em máquina nova — stack sobe limpo (postgres, redis, langfuse-db, langfuse, web healthy; worker/beat esperadamente exit-2 até item 9 entregar `config/celery.py`)
-- ⏳ `make test` ≥ 30 testes verdes (≥ 10 RLS) — **24/24 verdes hoje** (16 RLS); total final só após itens 7 (restantes), 8, 9, 10, 11
+- ⏳ `make test` ≥ 30 testes verdes (≥ 10 RLS) — **28/28 verdes hoje** (20 RLS + 1 anti-overlap real); total final só após itens 7 (restantes), 8, 9, 10, 11
 - ❌ Smoke: WhatsApp → eco em <10s, trace no Langfuse
 - ❌ Isolation manual com `psql` em duas clínicas
 - ❌ `docker build` da imagem prod boota com `.env.prod.example`
@@ -136,8 +136,8 @@ Onda 1 do item 7 fechada (8 modelos de cadastro tenant-aware com RLS comprovada 
 
 Próximas frentes (em ordem sugerida):
 
-1. **Onda 2 do item 7 — `Agendamento`** com `EXCLUDE USING GIST` (`btree_gist` extension) que impede overlap de consultas do mesmo médico. É o conceito Postgres mais rico da Fase 1 — merece commit dedicado.
-2. **Onda 3 do item 7 — Conversa, Mensagem, Handoff** — depende de `ClinicaCanal` (✅) e `Paciente` (✅) já existirem; introduz unique `(canal_id, external_id)` para idempotência de webhook.
+1. **Onda 3 do item 7 — Conversa, Mensagem, Handoff** — depende de `ClinicaCanal` (✅) e `Paciente` (✅) já existirem; introduz unique `(canal_id, external_id)` para idempotência de webhook.
+2. **Onda 4 do item 7 — Outbox, EventoBot** — observabilidade local + outbox pattern. Pode esperar até webhook entrar.
 3. **`config/celery.py`** (item 9) para destravar worker/beat. Hoje saem com exit 2 — `Module 'config' has no attribute 'celery'`.
 4. **ADR-001** (Django vs n8n) e **ADR-003** (Anthropic + OpenRouter) para fechar o trio fundacional.
 5. **`config/api.py` + `GET /api/health`** (item 8) — primeiro endpoint Ninja, valida Postgres+Redis end-to-end.

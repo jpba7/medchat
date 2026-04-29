@@ -21,12 +21,13 @@ uma das 8 tabelas tenant-aware da Onda 1, dois testes:
 from __future__ import annotations
 
 from contextlib import contextmanager
-from datetime import time
+from datetime import datetime, time, timezone
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import connection
+from django.db import IntegrityError, connection
 
+from apps.appointments.models import Agendamento
 from apps.catalog.models import (
     Convenio,
     Especialidade,
@@ -423,3 +424,124 @@ def test_medicodisponibilidade_save_rejeita_clinica_id_de_outro_medico(
                 inicio=time(9, 0),
                 fim=time(12, 0),
             ).save()
+
+
+# ---------------------------------------------------------------------------
+# Agendamento — Onda 2: isolation, defesa em profundidade e
+# **exclusion constraint** anti-overlap (o invariante mais forte do schema).
+# ---------------------------------------------------------------------------
+
+
+def _cria_cadastro_minimo(clinica):
+    """Cria paciente + medico + convenio na clínica dada e retorna a tupla.
+
+    Pré-condição: `app.clinica_id` da sessão atual já está setado para
+    a `clinica` em questão (caller usa `tenant_session` ou fixture
+    equivalente). Sem isso, `TenantAwareModel.save()` aborta.
+    """
+    paciente = Paciente.objects.create(
+        clinica=clinica, telefone_e164="+5511444444444", nome="José"
+    )
+    medico = Medico.objects.create(clinica=clinica, nome="Dr. Eli", crm="888888/SP")
+    convenio = Convenio.objects.create(clinica=clinica, nome="Amil")
+    return paciente, medico, convenio
+
+
+@pytest.mark.django_db(transaction=True)
+def test_isolation_agendamento(tenant_a, clinica_b):
+    with tenant_a() as clinica:
+        paciente, medico, convenio = _cria_cadastro_minimo(clinica)
+        agendamento_id = Agendamento.objects.create(
+            clinica=clinica,
+            paciente=paciente,
+            medico=medico,
+            convenio=convenio,
+            inicio_em=datetime(2026, 5, 1, 10, 0, tzinfo=timezone.utc),
+            fim_em=datetime(2026, 5, 1, 10, 30, tzinfo=timezone.utc),
+        ).id
+
+    with _sessao_app_readwrite(clinica_b.id):
+        assert not Agendamento.objects.filter(id=agendamento_id).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_agendamento_save_rejeita_clinica_id_diferente_da_sessao(clinica_a, clinica_b):
+    """Defesa em profundidade — `clinica_id` explícito ≠ sessão dispara
+    `ValidationError` no `TenantAwareModel.save()` antes do INSERT."""
+    with tenant_session(clinica_b.id):
+        paciente_b, medico_b, convenio_b = _cria_cadastro_minimo(clinica_b)
+
+    with tenant_session(clinica_a.id):
+        with pytest.raises(ValidationError):
+            Agendamento(
+                clinica=clinica_b,
+                paciente=paciente_b,
+                medico=medico_b,
+                convenio=convenio_b,
+                inicio_em=datetime(2026, 5, 1, 14, 0, tzinfo=timezone.utc),
+                fim_em=datetime(2026, 5, 1, 14, 30, tzinfo=timezone.utc),
+            ).save()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_agendamento_exclusion_constraint_impede_overlap(tenant_a):
+    """O conceito-chave da Onda 2 — Postgres garante que dois
+    agendamentos ATIVOS do mesmo médico não podem se sobrepor.
+
+    Cria um agendamento das 10h às 10h30 e tenta criar outro das
+    10h15 às 10h45 com o mesmo médico. Postgres deve recusar com
+    `IntegrityError` (vem do trigger da exclusion constraint).
+    """
+    with tenant_a() as clinica:
+        paciente, medico, convenio = _cria_cadastro_minimo(clinica)
+        Agendamento.objects.create(
+            clinica=clinica,
+            paciente=paciente,
+            medico=medico,
+            convenio=convenio,
+            inicio_em=datetime(2026, 5, 2, 10, 0, tzinfo=timezone.utc),
+            fim_em=datetime(2026, 5, 2, 10, 30, tzinfo=timezone.utc),
+        )
+
+        with pytest.raises(IntegrityError):
+            Agendamento.objects.create(
+                clinica=clinica,
+                paciente=paciente,
+                medico=medico,
+                convenio=convenio,
+                inicio_em=datetime(2026, 5, 2, 10, 15, tzinfo=timezone.utc),
+                fim_em=datetime(2026, 5, 2, 10, 45, tzinfo=timezone.utc),
+            )
+
+
+@pytest.mark.django_db(transaction=True)
+def test_agendamento_cancelado_libera_slot(tenant_a):
+    """Status `cancelado` é excluído da exclusion constraint (cláusula
+    `WHERE`). Cancelar um agendamento deve permitir reocupar o mesmo
+    slot — caso contrário, paciente que cancela "queima" o horário.
+    """
+    with tenant_a() as clinica:
+        paciente, medico, convenio = _cria_cadastro_minimo(clinica)
+        original = Agendamento.objects.create(
+            clinica=clinica,
+            paciente=paciente,
+            medico=medico,
+            convenio=convenio,
+            inicio_em=datetime(2026, 5, 3, 9, 0, tzinfo=timezone.utc),
+            fim_em=datetime(2026, 5, 3, 9, 30, tzinfo=timezone.utc),
+        )
+
+        # Cancela. Constraint deixa de considerar essa linha.
+        original.status = Agendamento.Status.CANCELADO
+        original.save()
+
+        # Mesmo médico, mesmo horário — sem o WHERE seria bloqueado.
+        novo = Agendamento.objects.create(
+            clinica=clinica,
+            paciente=paciente,
+            medico=medico,
+            convenio=convenio,
+            inicio_em=datetime(2026, 5, 3, 9, 0, tzinfo=timezone.utc),
+            fim_em=datetime(2026, 5, 3, 9, 30, tzinfo=timezone.utc),
+        )
+        assert novo.id != original.id
