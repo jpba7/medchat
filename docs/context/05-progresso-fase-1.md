@@ -2,7 +2,7 @@
 name: Progresso da Fase 1
 description: Estado atual da execução da Fase 1 — checklist com o que está feito, em andamento e pendente.
 status: em-andamento
-ultima_atualizacao: 2026-04-28
+ultima_atualizacao: 2026-04-29
 ---
 
 # Progresso — Fase 1 (Fundação Django)
@@ -69,7 +69,7 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ✅ `Dockerfile` (python:3.13-slim + uv 0.11.8 com BuildKit cache mounts)
 - ✅ `docker-compose.yml` com 6 serviços: postgres (pgvector/pg17), redis, langfuse-db, langfuse, web, worker, beat
 - ✅ `Makefile` com atalhos (`up`, `down`, `build`, `logs`, `migrate`, `shell`, `test`, `lint`, `format`, `clean`)
-- ❌ `pytest.ini` + `conftest.py` raiz com fixtures multi_tenant
+- ✅ `pytest.ini` + `conftest.py` raiz com fixtures multi_tenant
 
 ### 6. Multi-tenancy (RLS)
 - ✅ `apps/core/models.py` — `TenantAwareModel` abstract com validação no `save()`
@@ -110,44 +110,41 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ❌ Health endpoint completo
 
 ### 12. Testes
-- ❌ `tests/integration/test_rls.py` — ≥ 1 caso por tabela tenant-owned
+- ⏳ `tests/integration/test_rls.py` — fundação coberta (8 testes: roles, helpers `apply_rls_policy`/`drop_rls_policy`, `tenant_session`, `@with_tenant`, `Clinica` global). Falta ≥ 1 caso por tabela tenant-owned (depende do item 7 — quando `Paciente`, `Medico` etc. existirem).
 - ❌ `tests/integration/test_webhook_idempotency.py`
 - ❌ `tests/integration/test_evolution_provider.py`
 - ❌ `tests/fixtures/evolution_webhooks/` com payloads reais
 
 ### 13. Verificação end-to-end
-- ❌ `make up` em <5min em máquina nova
-- ❌ `make test` ≥ 30 testes verdes (≥ 10 RLS)
+- ⏳ `make up` em <5min em máquina nova — stack sobe limpo (postgres, redis, langfuse-db, langfuse, web healthy; worker/beat esperadamente exit-2 até item 9 entregar `config/celery.py`)
+- ⏳ `make test` ≥ 30 testes verdes (≥ 10 RLS) — 8/8 RLS passando hoje; total final só após itens 7-11
 - ❌ Smoke: WhatsApp → eco em <10s, trace no Langfuse
 - ❌ Isolation manual com `psql` em duas clínicas
 - ❌ `docker build` da imagem prod boota com `.env.prod.example`
 
 ## Próximo passo concreto
 
-**Subir o stack docker-compose e validar a fundação core num Postgres real.**
+Stack já está de pé contra Postgres real (após recuperação do Docker em 2026-04-29 — snapshotter overlayfs do containerd ficou corrompido depois de um `wsl --shutdown` no meio de uma operação de write; resolvido com `Clean / Purge data` via UI do Docker Desktop). Validações já passando:
 
-```bash
-make up                                    # postgres + redis + langfuse + web + worker + beat
-make migrate                               # aplica core/0001_rls_setup + clinics/0001_initial
-make shell                                 # criar uma Clinica de teste e validar admin
-```
+- `docker compose ps` → 5 containers healthy (postgres com pgvector 0.8.2, redis, langfuse-db, langfuse, web)
+- `uv run python manage.py migrate` → aplica `core/0001_rls_setup` + `clinics/0001_initial` + 19 do `django_celery_beat`
+- `uv run pytest tests/integration/test_rls.py -v` → 8/8 verdes em ~2s
+- `curl http://localhost:8000/admin/` → HTTP 302 (uvicorn OK)
+- `curl http://localhost:3000` → HTTP 200 (langfuse OK)
 
-Depois disso, próximas frentes (em ordem sugerida):
+Próximas frentes (em ordem sugerida):
 
-1. **`conftest.py` raiz + fixtures multi-tenant** — `clinica_a`,
-   `clinica_b`, `set_app_clinica_id()`, `pytest.ini` apontando pra
-   `config.settings.test`. Sem isso, nenhum teste de RLS é escrevível.
-2. **Tabelas tenant-owned com RLS aplicada via helper:**
+1. **Tabelas tenant-owned com RLS aplicada via helper** (item 7):
    - `apps/clinics`: `ClinicaCanal`, `ClinicaPolitica`.
    - `apps/patients`: `Paciente`.
    - `apps/catalog`: `Especialidade`, `Medico`, `Convenio`,
      `MedicoConvenio`, `MedicoDisponibilidade`.
    - Cada migration: `CreateModel` + `RunSQL("SELECT
      apply_rls_policy('<tabela>');")`.
-3. **Testes de RLS isolation** (≥ 1 caso por tabela tenant-owned)
-   antes de considerar a fundação fechada.
-4. **ADR-001** (Django vs n8n) e **ADR-003** (Anthropic + OpenRouter)
-   para fechar o trio fundacional.
+   - Adicionar 1 teste de isolation por tabela em `tests/integration/test_rls.py`.
+2. **`config/celery.py`** (item 9) para destravar worker/beat. Hoje saem com exit 2 — `Module 'config' has no attribute 'celery'`. Sem isso, nem dá pra rodar a primeira task `process_inbound_message`.
+3. **ADR-001** (Django vs n8n) e **ADR-003** (Anthropic + OpenRouter) para fechar o trio fundacional.
+4. **`config/api.py` + `GET /api/health`** (item 8) — primeiro endpoint Ninja, valida Postgres+Redis end-to-end.
 
 Critério para encerrar a Fase 1 (todos os 10 pontos do plano em
 [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1.md)
