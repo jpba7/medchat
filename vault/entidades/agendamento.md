@@ -78,7 +78,7 @@ EXCLUDE USING GIST (
 ) WHERE (status != 'cancelado');
 ```
 
-**Garante atomicamente que dois `Agendamento` com mesmo `medico_id` e tempos sobrepostos não podem coexistir, exceto se um deles está cancelado.** Ver [[../conceitos-ai/exclude-using-gist]] pra explicação completa.
+**Garante atomicamente que dois `Agendamento` com mesmo `medico_id` e tempos sobrepostos não podem coexistir, exceto se um deles está cancelado.** Ver [[conceitos-ai/exclude-using-gist]] pra explicação completa.
 
 Pre-requisito: extension `btree_gist` (habilitada na migration `core/0001_rls_setup`).
 
@@ -111,10 +111,10 @@ Pre-requisito: extension `btree_gist` (habilitada na migration `core/0001_rls_se
 
 ## Notas relacionadas
 
-- [[paciente]], [[catalog]] — FKs
-- [[../conceitos-ai/exclude-using-gist]] — explicação detalhada da exclusion constraint
-- [[../fluxos/agendar-consulta]] — fluxo principal cria `Agendamento` ao final
-- [[../aprendizados/medchat-superuser-bypassrls]] — `clean()` cross-tenant é defesa em profundidade contra BYPASSRLS
+- [[entidades/paciente]], [[entidades/catalog]] — FKs
+- [[conceitos-ai/exclude-using-gist]] — explicação detalhada da exclusion constraint
+- [[fluxos/agendar-consulta]] — fluxo principal cria `Agendamento` ao final
+- [[aprendizados/medchat-superuser-bypassrls]] — `clean()` cross-tenant é defesa em profundidade contra BYPASSRLS
 
 ## Referências externas
 

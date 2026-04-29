@@ -71,5 +71,5 @@ Quando criar nova role Postgres com policy RLS:
 
 ## Notas relacionadas
 
-- [[medchat-superuser-bypassrls]] — outro problema na mesma área: SUPERUSER bypassa RLS em prod
-- [[../entidades/clinica]] — `Clinica` é a única tabela sem RLS (e por isso sem essa preocupação)
+- [[aprendizados/medchat-superuser-bypassrls]] — outro problema na mesma área: SUPERUSER bypassa RLS em prod
+- [[entidades/clinica]] — `Clinica` é a única tabela sem RLS (e por isso sem essa preocupação)

@@ -27,7 +27,7 @@ O que esta entidade representa no produto. 1-3 linhas.
 
 | Campo | Tipo | Por quê existe |
 |---|---|---|
-| `<campo>` | `<tipo>` | <motivo curto, 1 linha> |
+| `<campo>` | `<tipo>` | {motivo curto, 1 linha} |
 
 ## Relacionamentos
 
@@ -36,12 +36,12 @@ O que esta entidade representa no produto. 1-3 linhas.
 
 ## Regras / invariantes
 
-- <regra de negócio com motivo>
-- <invariante que precisa ser preservado>
+- {regra de negócio com motivo}
+- {invariante que precisa ser preservado}
 
 ## Gotchas
 
-- <armadilha não-óbvia que vale documentar>
+- {armadilha não-óbvia que vale documentar}
 
 ## Notas relacionadas
 

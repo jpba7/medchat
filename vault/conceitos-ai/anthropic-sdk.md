@@ -52,7 +52,7 @@ Decisão de modelo por caso de uso ainda não está fechada — vai ser tomada c
 ## Notas relacionadas
 
 - [[fluxos/agendar-consulta]] — usa o SDK pra interpretar mensagem e decidir tool calls
-- (futuras) [[conceitos-ai/prompt-caching]], [[conceitos-ai/tool-use]], [[conceitos-ai/evals]]
+- (futuras) `conceitos-ai/prompt-caching`, `conceitos-ai/tool-use`, `conceitos-ai/evals` — criar quando o app `apps/bot/` ganhar código.
 
 ## Deep dive
 

@@ -70,9 +70,9 @@ Quando preparar deploy Railway / produção:
 
 ## Notas relacionadas
 
-- [[../entidades/clinica]] — `Clinica` é a tabela GLOBAL (sem RLS, intencional)
-- [[grant-faltava-na-migration]] — bug relacionado: roles existiam mas não tinham GRANT
-- [[../decisoes/clinica-id-desnormalizado-vs-fk]] — defesa em profundidade: cada tabela RLS própria
+- [[entidades/clinica]] — `Clinica` é a tabela GLOBAL (sem RLS, intencional)
+- [[aprendizados/grant-faltava-na-migration]] — bug relacionado: roles existiam mas não tinham GRANT
+- [[decisoes/clinica-id-desnormalizado-vs-fk]] — defesa em profundidade: cada tabela RLS própria
 
 ## Referências externas
 

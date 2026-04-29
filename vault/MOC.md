@@ -1,3 +1,9 @@
+---
+name: MOC
+type: meta
+tags: [vault, indice]
+---
+
 # MOC — Map of Content
 
 Índice navegável do vault. Atualize aqui sempre que adicionar/renomear/remover uma nota.
@@ -53,9 +59,14 @@
 
 ## Convenção de links
 
-Use `[[path/sem/extensao]]` (estilo Obsidian wiki-link). Exemplos:
+**Dentro do vault**: use `[[path/sem/extensao]]` (Obsidian wiki-link). Sempre **path absoluto a partir da raiz do vault**, sem `..`.
 
-- `[[entidades/clinica]]` em vez de `[entidades/clinica.md](entidades/clinica.md)`.
-- `[[../docs/adr/0002-rls-vs-schema]]` pra linkar fora do vault.
+- ✅ `[[entidades/clinica]]`
+- ❌ `[[../entidades/clinica]]` — Obsidian não suporta `..` em wiki-link.
+- ⚠️ `[[clinica]]` — só basename. Funciona se nome único, mas frágil; prefira path completo.
 
-Para linkar arquivos fora do vault que não vão abrir no Obsidian, use markdown link normal: `[apps/clinics/models.py](../apps/clinics/models.py)`.
+**Fora do vault** (linkar pra `docs/`, `apps/`, código): use **markdown link normal** com path relativo. Wiki-link `[[]]` é só pra dentro do vault.
+
+- ✅ `[apps/clinics/models.py](../apps/clinics/models.py)`
+- ✅ `[docs/adr/0002-rls-vs-schema.md](../../docs/adr/0002-rls-vs-schema.md)`
+- ❌ `[[../docs/adr/0002-rls-vs-schema]]` — Obsidian não resolve.

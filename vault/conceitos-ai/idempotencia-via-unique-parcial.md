@@ -113,10 +113,10 @@ except IntegrityError as e:
 
 ## Notas relacionadas
 
-- [[../entidades/conversations]] — `Mensagem` é onde o constraint mora
-- [[outbox-pattern]] — saídas começam `NULL`, ganham `external_id` depois do envio
-- [[../integracoes/evolution-api]] — provedor que reentrega
-- [[exclude-using-gist]] — outro uso de constraint parcial (`WHERE status != 'cancelado'`)
+- [[entidades/conversations]] — `Mensagem` é onde o constraint mora
+- [[conceitos-ai/outbox-pattern]] — saídas começam `NULL`, ganham `external_id` depois do envio
+- [[integracoes/evolution-api]] — provedor que reentrega
+- [[conceitos-ai/exclude-using-gist]] — outro uso de constraint parcial (`WHERE status != 'cancelado'`)
 
 ## Referências externas
 

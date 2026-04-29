@@ -65,11 +65,11 @@ Index só inclui pacientes que preencheram CPF — reduz tamanho do índice quan
 
 ## Notas relacionadas
 
-- [[clinica]] — `ClinicaPolitica.cpf_obrigatorio` controla se CPF é exigido
-- [[catalog]] — `Medico` é a contraparte; agendamento liga os dois
-- [[agendamento]] — usa `Paciente` como FK
-- [[conversations]] — `Conversa` agrupa mensagens por `Paciente`
-- [[../fluxos/agendar-consulta]] — fluxo principal usa `Paciente`
+- [[entidades/clinica]] — `ClinicaPolitica.cpf_obrigatorio` controla se CPF é exigido
+- [[entidades/catalog]] — `Medico` é a contraparte; agendamento liga os dois
+- [[entidades/agendamento]] — usa `Paciente` como FK
+- [[entidades/conversations]] — `Conversa` agrupa mensagens por `Paciente`
+- [[fluxos/agendar-consulta]] — fluxo principal usa `Paciente`
 
 ## Referências externas
 

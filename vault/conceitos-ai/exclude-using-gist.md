@@ -100,9 +100,9 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 ## Notas relacionadas
 
-- [[../entidades/agendamento]] — onde a constraint é definida
-- [[../fluxos/agendar-consulta]] — fluxo que se beneficia (sem race condition)
-- [[idempotencia-via-unique-parcial]] — outro caso de constraint parcial Postgres pra invariante de domínio
+- [[entidades/agendamento]] — onde a constraint é definida
+- [[fluxos/agendar-consulta]] — fluxo que se beneficia (sem race condition)
+- [[conceitos-ai/idempotencia-via-unique-parcial]] — outro caso de constraint parcial Postgres pra invariante de domínio
 
 ## Deep dive
 

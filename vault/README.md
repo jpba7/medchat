@@ -1,3 +1,9 @@
+---
+name: README
+type: meta
+tags: [vault, regras]
+---
+
 # Vault — Regras de Operação
 
 Base de conhecimento atômica do MedChat. Captura conhecimento que **não vive bem no código** nem em `docs/` longo: regra de domínio com motivo, gotcha de integração, conexão entre entidades, decisão pequena fora de ADR, fluxo de conversação, conceito AI usado no produto.
@@ -128,7 +134,7 @@ Quando trabalhando neste repo, **antes de responder** sobre:
 
 Sem TTL automático. Quando alguém (humano ou Claude) ler uma nota e perceber que tá velha:
 
-1. Avisar no chat: *"a nota `vault/<path>` parece desatualizada porque <motivo>. Quer atualizar?"*.
+1. Avisar no chat: *"a nota `vault/<path>` parece desatualizada porque {motivo}. Quer atualizar?"*.
 2. Se sim: propor diff e atualizar.
 3. Se não: deixar como está. Stale conhecido > stale escondido.
 
