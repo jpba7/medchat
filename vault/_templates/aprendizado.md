@@ -1,5 +1,5 @@
 ---
-name: <slug-do-aprendizado>
+name: template-aprendizado
 type: aprendizado
 tags: []
 ---

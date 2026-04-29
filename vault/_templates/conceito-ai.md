@@ -1,5 +1,5 @@
 ---
-name: <slug-do-conceito>
+name: template-conceito-ai
 type: conceito-ai
 tags: []
 ---
