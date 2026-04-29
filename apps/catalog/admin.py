@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import Convenio, Especialidade, Medico
+from .models import (
+    Convenio,
+    Especialidade,
+    Medico,
+    MedicoConvenio,
+    MedicoDisponibilidade,
+)
 
 
 @admin.register(Especialidade)
@@ -32,3 +38,19 @@ class ConvenioAdmin(admin.ModelAdmin):
     list_filter = ("ativo", "clinica")
     search_fields = ("nome",)
     readonly_fields = ("id", "criado_em", "atualizado_em")
+
+
+@admin.register(MedicoConvenio)
+class MedicoConvenioAdmin(admin.ModelAdmin):
+    list_display = ("medico", "convenio", "preco_consulta_centavos", "ativo")
+    list_filter = ("ativo", "convenio")
+    search_fields = ("medico__nome", "convenio__nome")
+    readonly_fields = ("id", "clinica", "criado_em", "atualizado_em")
+
+
+@admin.register(MedicoDisponibilidade)
+class MedicoDisponibilidadeAdmin(admin.ModelAdmin):
+    list_display = ("medico", "dia_semana", "inicio", "fim")
+    list_filter = ("dia_semana", "medico__clinica")
+    search_fields = ("medico__nome",)
+    readonly_fields = ("id", "clinica", "criado_em", "atualizado_em")
