@@ -81,3 +81,9 @@ secrets/
 # Cache de IA / LangChain (caso use)
 .langchain/
 .cache/
+
+# Obsidian — config local do vault (workspace volátil, theme, plugins individuais)
+vault/.obsidian/
+
+# Claude Code — diretório operacional de worktrees (não vai pro repo)
+.claude/worktrees/
