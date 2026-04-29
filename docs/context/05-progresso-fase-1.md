@@ -50,8 +50,8 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ✅ `apps/appointments` — `Agendamento` + exclusion constraint anti-overlap (`EXCLUDE USING GIST` com `btree_gist`)
 - ✅ `apps/conversations` — `Conversa`, `Mensagem`, `Handoff` (+ unique parcial `(canal, external_id) WHERE external_id IS NOT NULL` em `mensagens` para idempotência de webhook)
 - ❌ `apps/bot` — scaffolding (Fase 2 implementa)
-- ❌ `apps/channels` — providers WhatsApp + webhook entry
-- ❌ `apps/observability` — Langfuse client, health, metrics
+- ⏳ `apps/channels` — `Outbox` ✅; providers WhatsApp + webhook entry ❌
+- ⏳ `apps/observability` — `EventoBot` ✅; Langfuse client, health, metrics ❌
 
 ### 4. Documentação pedagógica
 - ❌ `docs/adr/0001-django-vs-n8n.md`
@@ -84,7 +84,7 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ✅ Onda 1 (cadastro): `clinica_canais`, `clinica_politicas`, `pacientes`, `especialidades`, `medicos`, `convenios`, `medico_convenios`, `medico_disponibilidades` — todas com RLS aplicada
 - ✅ Onda 2 (`agendamentos`): `CheckConstraint` (inicio<fim) + `ExclusionConstraint` `EXCLUDE USING GIST (medico_id WITH =, tstzrange(inicio_em, fim_em) WITH &&) WHERE status != 'cancelado'` (extension `btree_gist`) + RLS aplicada
 - ✅ Onda 3 (`conversas`, `mensagens`, `handoffs`): `UniqueConstraint` parcial `(canal, external_id) WHERE external_id IS NOT NULL` em mensagens — idempotência de webhook ao nível DB. RLS aplicada nas 3 tabelas. `clinica_id` desnormalizado em mensagens/handoffs (auto-populated do FK `conversa`).
-- ❌ `outbox`, `eventos_bot`
+- ✅ Onda 4 (`outbox` em `apps.channels`, `eventos_bot` em `apps.observability`): outbox pattern para envio assíncrono ao provedor (status enum + retry exponencial via `tentativas`/`proxima_em`); EventoBot é log estruturado complementar ao Langfuse, com FK opcional pra `Conversa` (SET_NULL para preservar evento histórico). RLS aplicada nas 2 tabelas.
 
 ### 8. API HTTP (Ninja)
 - ❌ `config/api.py` — NinjaAPI raiz
@@ -111,14 +111,14 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ❌ Health endpoint completo
 
 ### 12. Testes
-- ⏳ `tests/integration/test_rls.py` — **36 testes verdes**: 8 fundação + 8 isolation Onda 1 + 8 defesa em profundidade Onda 1 + 4 Agendamento (isolation + save() + exclusion impede overlap + cancelado libera slot) + 8 Onda 3 (3 isolation + 3 defesa em profundidade + 1 idempotência canal/external_id + 1 external_id null permite múltiplas). Falta cobertura para Outbox/EventoBot quando existirem.
+- ⏳ `tests/integration/test_rls.py` — **40 testes verdes**: 8 fundação + 8 isolation Onda 1 + 8 defesa em profundidade Onda 1 + 4 Agendamento (Onda 2) + 8 Onda 3 (com idempotência) + 4 Onda 4 (Outbox + EventoBot, isolation + defesa em profundidade). Cobertura completa do item 7. Próximas baterias: webhook idempotency, Evolution provider — quando os endpoints/clientes existirem.
 - ❌ `tests/integration/test_webhook_idempotency.py`
 - ❌ `tests/integration/test_evolution_provider.py`
 - ❌ `tests/fixtures/evolution_webhooks/` com payloads reais
 
 ### 13. Verificação end-to-end
 - ⏳ `make up` em <5min em máquina nova — stack sobe limpo (postgres, redis, langfuse-db, langfuse, web healthy; worker/beat esperadamente exit-2 até item 9 entregar `config/celery.py`)
-- ✅ `make test` ≥ 30 testes verdes (≥ 10 RLS) — **36/36 verdes hoje** (28 RLS + 1 anti-overlap real + 1 idempotência); critério atingido
+- ✅ `make test` ≥ 30 testes verdes (≥ 10 RLS) — **40/40 verdes hoje** (32 RLS + 1 anti-overlap real + 1 idempotência); critério atingido
 - ❌ Smoke: WhatsApp → eco em <10s, trace no Langfuse
 - ❌ Isolation manual com `psql` em duas clínicas
 - ❌ `docker build` da imagem prod boota com `.env.prod.example`
@@ -136,12 +136,13 @@ Onda 1 do item 7 fechada (8 modelos de cadastro tenant-aware com RLS comprovada 
 
 Próximas frentes (em ordem sugerida):
 
-1. **Onda 4 do item 7 — Outbox, EventoBot** — outbox pattern para envio assíncrono ao provedor + log local de eventos do bot (complemento do Langfuse).
-2. **`config/celery.py`** (item 9) para destravar worker/beat. Hoje saem com exit 2 — `Module 'config' has no attribute 'celery'`.
-3. **`config/api.py` + `GET /api/health`** (item 8) — primeiro endpoint Ninja, valida Postgres+Redis end-to-end.
-4. **`POST /api/webhooks/whatsapp/{canal_id}`** (item 8) — usa o `webhook_secret` de `ClinicaCanal` para HMAC + a unique parcial `(canal, external_id)` para idempotência. Roteia pra Celery via `process_inbound_message`.
-5. **ADR-001** (Django vs n8n) e **ADR-003** (Anthropic + OpenRouter) para fechar o trio fundacional.
-6. **Hardening: trocar `DATABASE_URL` para `app_readwrite`** em produção (item 13 último marcador) — habilita RLS de verdade em runtime, hoje ela só aplica nos testes via `SET LOCAL ROLE`.
+1. **`config/celery.py`** (item 9) — destrava worker/beat (hoje saem com exit 2 — `Module 'config' has no attribute 'celery'`). Pré-requisito pras tasks `process_inbound_message` (consumir webhook) e `send_outbox` (drenar outbox pra provedor com retry).
+2. **`config/api.py` + `GET /api/health`** (item 8) — primeiro endpoint Ninja, valida Postgres+Redis+Celery end-to-end.
+3. **`POST /api/webhooks/whatsapp/{canal_id}`** (item 8) — usa o `webhook_secret` de `ClinicaCanal` para HMAC + a unique parcial `(canal, external_id)` para idempotência. Roteia pra Celery via `process_inbound_message`.
+4. **EvolutionProvider** (item 10) — HTTP client + parser webhook + send. Primeiro provider real do `apps.channels`.
+5. **Langfuse client + primeiro trace** (item 11) em `apps.observability`.
+6. **ADRs faltantes**: 0001 (Django vs n8n) e 0003 (Anthropic + OpenRouter) para fechar o trio fundacional.
+7. **Hardening: trocar `DATABASE_URL` para `app_readwrite`** em produção (item 13 último marcador) — habilita RLS de verdade em runtime, hoje ela só aplica nos testes via `SET LOCAL ROLE`.
 
 Critério para encerrar a Fase 1 (todos os 10 pontos do plano em
 [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1.md)

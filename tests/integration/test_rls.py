@@ -35,9 +35,11 @@ from apps.catalog.models import (
     MedicoConvenio,
     MedicoDisponibilidade,
 )
+from apps.channels.models import Outbox
 from apps.clinics.models import Clinica, ClinicaCanal, ClinicaPolitica
 from apps.conversations.models import Conversa, Handoff, Mensagem
 from apps.core.tenancy import tenant_session, with_tenant
+from apps.observability.models import EventoBot
 from apps.patients.models import Paciente
 
 
@@ -718,3 +720,60 @@ def test_mensagem_external_id_null_permite_multiplas(tenant_a):
             external_id=None,
         )
         assert m1.id != m2.id
+
+
+# ---------------------------------------------------------------------------
+# Onda 4 — Outbox (envio assíncrono) e EventoBot (log local). Modelos
+# simples; cobertura aqui é apenas isolation + defesa em profundidade
+# (mesmo padrão dos modelos de cadastro, sem novo conceito DB).
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db(transaction=True)
+def test_isolation_outbox(tenant_a, clinica_b):
+    with tenant_a() as clinica:
+        outbox_id = Outbox.objects.create(
+            clinica=clinica,
+            tipo=Outbox.Tipo.WHATSAPP_TEXT,
+            payload={"to_e164": "+5511555555555", "body": "olá"},
+            proxima_em=datetime(2026, 5, 4, 12, 0, tzinfo=timezone.utc),
+        ).id
+
+    with _sessao_app_readwrite(clinica_b.id):
+        assert not Outbox.objects.filter(id=outbox_id).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_outbox_save_rejeita_clinica_id_diferente_da_sessao(clinica_a, clinica_b):
+    with tenant_session(clinica_a.id):
+        with pytest.raises(ValidationError):
+            Outbox(
+                clinica=clinica_b,
+                tipo=Outbox.Tipo.WHATSAPP_TEXT,
+                payload={"to_e164": "+5511666666666", "body": "vazamento?"},
+                proxima_em=datetime(2026, 5, 4, 13, 0, tzinfo=timezone.utc),
+            ).save()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_isolation_evento_bot(tenant_a, clinica_b):
+    with tenant_a() as clinica:
+        evento_id = EventoBot.objects.create(
+            clinica=clinica,
+            tipo_evento=EventoBot.TipoEvento.MENSAGEM_RECEBIDA,
+            dados={"external_id": "wamid_evento_1", "conteudo": "oi"},
+        ).id
+
+    with _sessao_app_readwrite(clinica_b.id):
+        assert not EventoBot.objects.filter(id=evento_id).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_evento_bot_save_rejeita_clinica_id_diferente_da_sessao(clinica_a, clinica_b):
+    with tenant_session(clinica_a.id):
+        with pytest.raises(ValidationError):
+            EventoBot(
+                clinica=clinica_b,
+                tipo_evento=EventoBot.TipoEvento.ERRO,
+                dados={"exception_type": "ValueError"},
+            ).save()
