@@ -34,5 +34,5 @@ Escolhemos **<opção>** porque <motivo principal>.
 
 ## Notas relacionadas
 
-- [[entidades/<x>]]
-- [[fluxos/<y>]]
+- `[[entidades/<x>]]`
+- `[[fluxos/<y>]]`

@@ -26,16 +26,16 @@ tags: []
 
 ## Entidades envolvidas
 
-- [[entidades/<entidade1>]]
-- [[entidades/<entidade2>]]
+- `[[entidades/<entidade1>]]`
+- `[[entidades/<entidade2>]]`
 
 ## Integrações envolvidas
 
-- [[integracoes/<integracao1>]]
+- `[[integracoes/<integracao1>]]`
 
 ## Conceitos AI usados
 
-- [[conceitos-ai/<conceito1>]]
+- `[[conceitos-ai/<conceito1>]]`
 
 ## Políticas configuráveis (`ClinicaPolitica`)
 

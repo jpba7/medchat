@@ -14,8 +14,8 @@ O que esta entidade representa no produto. 1-3 linhas.
 
 ## Onde mora no código
 
-- Modelo: [`apps/<app>/models.py`](../../apps/<app>/models.py) → classe `<NomeDoModelo>`
-- Migration relevante: [`apps/<app>/migrations/<NNNN>_<nome>.py`](../../apps/<app>/migrations/)
+- Modelo: `apps/<app>/models.py` → classe `<NomeDoModelo>`
+- Migration relevante: `apps/<app>/migrations/<NNNN>_<nome>.py`
 - Tabela no banco: `<db_table>`
 
 ## Tenant-aware?
@@ -45,9 +45,9 @@ O que esta entidade representa no produto. 1-3 linhas.
 
 ## Notas relacionadas
 
-- [[fluxos/<fluxo-que-toca-essa-entidade>]]
-- [[integracoes/<integracao-relacionada>]]
-- [[conceitos-ai/<conceito-relacionado>]]
+- `[[fluxos/<fluxo-que-toca-essa-entidade>]]`
+- `[[integracoes/<integracao-relacionada>]]`
+- `[[conceitos-ai/<conceito-relacionado>]]`
 
 ## Referências externas
 

@@ -35,9 +35,9 @@ Alternativas descartadas:
 
 ## Notas relacionadas
 
-- [[entidades/<entidade-que-usa>]]
-- [[fluxos/<fluxo-que-usa>]]
-- [[integracoes/<provedor-do-conceito>]]
+- `[[entidades/<entidade-que-usa>]]`
+- `[[fluxos/<fluxo-que-usa>]]`
+- `[[integracoes/<provedor-do-conceito>]]`
 
 ## Deep dive
 

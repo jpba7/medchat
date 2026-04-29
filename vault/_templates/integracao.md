@@ -50,8 +50,8 @@ Em qual ponto do produto essa integração aparece. 1-3 linhas.
 
 ## Notas relacionadas
 
-- [[entidades/<entidade-que-armazena-config>]]
-- [[fluxos/<fluxo-que-usa>]]
+- `[[entidades/<entidade-que-armazena-config>]]`
+- `[[fluxos/<fluxo-que-usa>]]`
 
 ## Referências externas
 
