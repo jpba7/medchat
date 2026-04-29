@@ -10,6 +10,13 @@ Base de conhecimento atômica do MedChat. Captura conhecimento que **não vive b
 
 Usado por Claude Code em sessões deste repo, e por humanos lendo direto.
 
+## Setup do Obsidian (1ª vez por máquina)
+
+`vault/.obsidian/` está no `.gitignore` (config local). Após `git clone`, na primeira vez que abrir o vault no Obsidian:
+
+1. **Excluir `_templates/` da indexação**: Settings → Files & Links → **Excluded files** → adicionar `_templates/`. Sem isso, templates aparecem como nodes "órfãos" no graph view (eles existem como referência estrutural, não como notas reais).
+2. **(Opcional) Default location for new notes**: Settings → Files & Links → **Default location for new notes** → "Same folder as current file" — evita criar notas no root do vault ao clicar em link broken.
+
 ## Estrutura
 
 ```

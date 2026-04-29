@@ -1,5 +1,5 @@
 ---
-name: <slug-da-decisao>
+name: template-decisao
 type: decisao
 tags: []
 ---

@@ -1,5 +1,5 @@
 ---
-name: <slug-do-fluxo>
+name: template-fluxo
 type: fluxo
 tags: []
 ---

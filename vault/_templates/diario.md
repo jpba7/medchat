@@ -1,5 +1,5 @@
 ---
-name: YYYY-MM-DD
+name: template-diario
 type: diario
 tags: []
 ---

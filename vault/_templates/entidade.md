@@ -1,5 +1,5 @@
 ---
-name: <slug-da-entidade>
+name: template-entidade
 type: entidade
 tags: []
 ---
