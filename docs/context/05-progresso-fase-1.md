@@ -94,10 +94,10 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ❌ `POST /api/webhooks/langfuse` — stub (Fase 3)
 
 ### 9. Celery + tarefas
-- ❌ `config/celery.py`
-- ❌ Task `process_inbound_message` (eco MVP "Recebi. Em instantes respondo.")
-- ❌ Task `send_outbox` (consumidor FIFO por conversa)
-- ❌ `django-celery-beat` migrations
+- ✅ `config/celery.py` (Celery app + autodiscover) + `config/__init__.py` exporta `celery_app`
+- ✅ Task `process_inbound_message` (eco MVP "Recebi. Em instantes respondo.") em `apps.conversations.tasks`
+- ✅ Task `send_outbox` (consumidor com stub provider + esqueleto de retry exponencial 30s/2m/8m/32m/2h) em `apps.channels.tasks`
+- ✅ `django-celery-beat` migrations (aplicadas no setup inicial)
 
 ### 10. Adapter WhatsApp
 - ❌ `apps/channels/providers/base.py` — Protocol `WhatsAppProvider`, dataclasses
@@ -111,14 +111,15 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ❌ Health endpoint completo
 
 ### 12. Testes
-- ⏳ `tests/integration/test_rls.py` — **40 testes verdes**: 8 fundação + 8 isolation Onda 1 + 8 defesa em profundidade Onda 1 + 4 Agendamento (Onda 2) + 8 Onda 3 (com idempotência) + 4 Onda 4 (Outbox + EventoBot, isolation + defesa em profundidade). Cobertura completa do item 7. Próximas baterias: webhook idempotency, Evolution provider — quando os endpoints/clientes existirem.
+- ⏳ `tests/integration/test_rls.py` — **40 testes RLS verdes** (8 fundação + 24 Onda 1 + 4 Agendamento + 8 Onda 3 + 4 Onda 4). Cobertura completa do item 7.
+- ⏳ `tests/integration/test_tasks.py` — **3 testes Celery verdes** rodando com `CELERY_TASK_ALWAYS_EAGER`: eco MVP (`process_inbound_message` cria saída + Outbox), `send_outbox` marca como `enviado`, `send_outbox` é idempotente quando linha já não está `pendente`.
 - ❌ `tests/integration/test_webhook_idempotency.py`
 - ❌ `tests/integration/test_evolution_provider.py`
 - ❌ `tests/fixtures/evolution_webhooks/` com payloads reais
 
 ### 13. Verificação end-to-end
-- ⏳ `make up` em <5min em máquina nova — stack sobe limpo (postgres, redis, langfuse-db, langfuse, web healthy; worker/beat esperadamente exit-2 até item 9 entregar `config/celery.py`)
-- ✅ `make test` ≥ 30 testes verdes (≥ 10 RLS) — **40/40 verdes hoje** (32 RLS + 1 anti-overlap real + 1 idempotência); critério atingido
+- ✅ `make up` em <5min em máquina nova — stack sobe limpo: 7/7 containers UP (postgres, redis, langfuse-db, langfuse, web, worker, beat) com worker descobrindo automaticamente as 2 tasks via autodiscover.
+- ✅ `make test` ≥ 30 testes verdes (≥ 10 RLS) — **43/43 verdes hoje** (40 RLS + 3 Celery); critério atingido com folga
 - ❌ Smoke: WhatsApp → eco em <10s, trace no Langfuse
 - ❌ Isolation manual com `psql` em duas clínicas
 - ❌ `docker build` da imagem prod boota com `.env.prod.example`
@@ -136,13 +137,12 @@ Onda 1 do item 7 fechada (8 modelos de cadastro tenant-aware com RLS comprovada 
 
 Próximas frentes (em ordem sugerida):
 
-1. **`config/celery.py`** (item 9) — destrava worker/beat (hoje saem com exit 2 — `Module 'config' has no attribute 'celery'`). Pré-requisito pras tasks `process_inbound_message` (consumir webhook) e `send_outbox` (drenar outbox pra provedor com retry).
-2. **`config/api.py` + `GET /api/health`** (item 8) — primeiro endpoint Ninja, valida Postgres+Redis+Celery end-to-end.
-3. **`POST /api/webhooks/whatsapp/{canal_id}`** (item 8) — usa o `webhook_secret` de `ClinicaCanal` para HMAC + a unique parcial `(canal, external_id)` para idempotência. Roteia pra Celery via `process_inbound_message`.
-4. **EvolutionProvider** (item 10) — HTTP client + parser webhook + send. Primeiro provider real do `apps.channels`.
-5. **Langfuse client + primeiro trace** (item 11) em `apps.observability`.
-6. **ADRs faltantes**: 0001 (Django vs n8n) e 0003 (Anthropic + OpenRouter) para fechar o trio fundacional.
-7. **Hardening: trocar `DATABASE_URL` para `app_readwrite`** em produção (item 13 último marcador) — habilita RLS de verdade em runtime, hoje ela só aplica nos testes via `SET LOCAL ROLE`.
+1. **`config/api.py` + `GET /api/health`** (item 8) — primeiro endpoint Ninja, valida Postgres+Redis+Celery end-to-end. Atalho de smoke test pra todo o stack.
+2. **`POST /api/webhooks/whatsapp/{canal_id}`** (item 8) — usa o `webhook_secret` de `ClinicaCanal` (HMAC) + unique parcial em mensagens (idempotência) + dispatcha `process_inbound_message`. Esse é o "loop fechado" do MVP.
+3. **EvolutionProvider** (item 10) — HTTP client real para substituir o stub em `_entrega_via_provider_stub` de `send_outbox`.
+4. **Langfuse client + primeiro trace** (item 11) em `apps.observability`.
+5. **ADRs faltantes**: 0001 (Django vs n8n) e 0003 (Anthropic + OpenRouter) para fechar o trio fundacional.
+6. **Hardening: trocar `DATABASE_URL` para `app_readwrite`** em produção (item 13 último marcador) — habilita RLS de verdade em runtime, hoje ela só aplica nos testes via `SET LOCAL ROLE`.
 
 Critério para encerrar a Fase 1 (todos os 10 pontos do plano em
 [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1.md)
