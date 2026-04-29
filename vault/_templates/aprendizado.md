@@ -22,8 +22,8 @@ O que isso muda no jeito de pensar / construir o produto.
 
 ## Onde já apareceu
 
-- `[[entidades/<x>]]`
-- `[[fluxos/<y>]]`
+- `entidades/<entidade>`
+- `fluxos/<fluxo>`
 - {commit ou PR específico}
 
 ## Próxima vez que importar

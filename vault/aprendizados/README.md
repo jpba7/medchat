@@ -36,7 +36,7 @@ Use [`vault/_templates/aprendizado.md`](../_templates/aprendizado.md). Status se
 
 ```markdown
 ---
-name: rls-bypass-em-celery
+title: rls-bypass-em-celery
 type: aprendizado
 tags: [rls, celery]
 ---
