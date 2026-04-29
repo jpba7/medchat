@@ -44,15 +44,17 @@ Auth do webhook: HMAC do payload usando `ClinicaCanal.webhook_secret` (auto-gera
 
 ## Idempotência
 
-Toda mensagem inbound carrega `external_id` único do provedor. Constraint:
+Toda mensagem inbound carrega `external_id` único do provedor. Constraint **parcial** em `mensagens`:
 
+```sql
+UNIQUE (canal_id, external_id) WHERE external_id IS NOT NULL
 ```
-UNIQUE (canal_id, external_id)
-```
 
-Se Evolution reenviar (timeout, retry), MedChat insere → conflito → retorna 200 sem reprocessar. **Regra do projeto** — ver [`CLAUDE.md`](../../CLAUDE.md) §3.
+Se Evolution reenviar (timeout, retry), MedChat insere → conflito → retorna 200 sem reprocessar. O `WHERE external_id IS NOT NULL` é proposital: mensagens **geradas localmente** pelo bot (saídas) começam com `external_id=NULL` e coexistem livremente — só ganham unicidade depois que `send_outbox` confirma envio com o provedor e atribui o ID retornado.
 
-Lado outbound: idempotência fica em outbox. Cada linha tem ID local; se o worker fizer retry, marca o mesmo outbox como sent — não duplica envio.
+Detalhes: [[../conceitos-ai/idempotencia-via-unique-parcial]]. Regra do projeto: [`CLAUDE.md`](../../CLAUDE.md) §3.
+
+Lado outbound: idempotência fica em outbox. Cada linha tem ID local; se o worker fizer retry, marca o mesmo outbox como sent — não duplica envio. Detalhes: [[../conceitos-ai/outbox-pattern]].
 
 ## Outbox / send
 
