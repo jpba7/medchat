@@ -87,9 +87,9 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ✅ Onda 4 (`outbox` em `apps.channels`, `eventos_bot` em `apps.observability`): outbox pattern para envio assíncrono ao provedor (status enum + retry exponencial via `tentativas`/`proxima_em`); EventoBot é log estruturado complementar ao Langfuse, com FK opcional pra `Conversa` (SET_NULL para preservar evento histórico). RLS aplicada nas 2 tabelas.
 
 ### 8. API HTTP (Ninja)
-- ❌ `config/api.py` — NinjaAPI raiz
-- ❌ `GET /api/health` — Postgres + Redis + Celery checks
-- ❌ `GET /api/ready` — só Postgres
+- ✅ `config/api.py` — NinjaAPI raiz, montada em `/api/` no `config/urls.py`
+- ✅ `GET /api/health` — Postgres + Redis + Celery (`control.ping`) — retorna 200 (`status=ok`) ou 503 (`status=degraded`) + payload com check por dependência
+- ✅ `GET /api/ready` — só Postgres (probe rápido para LB/k8s)
 - ❌ `POST /api/webhooks/whatsapp/{canal_id}` — valida HMAC, idempotência, dispatch Celery
 - ❌ `POST /api/webhooks/langfuse` — stub (Fase 3)
 
@@ -113,13 +113,14 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 ### 12. Testes
 - ⏳ `tests/integration/test_rls.py` — **40 testes RLS verdes** (8 fundação + 24 Onda 1 + 4 Agendamento + 8 Onda 3 + 4 Onda 4). Cobertura completa do item 7.
 - ⏳ `tests/integration/test_tasks.py` — **3 testes Celery verdes** rodando com `CELERY_TASK_ALWAYS_EAGER`: eco MVP (`process_inbound_message` cria saída + Outbox), `send_outbox` marca como `enviado`, `send_outbox` é idempotente quando linha já não está `pendente`.
+- ⏳ `tests/integration/test_api.py` — **5 testes verdes** dos health endpoints: `/ready` 200, `/health` 200 com todas dependências, `/health` 503 quando Celery sem workers, `/health` 503 quando Redis falha, garantia de que `/api/health` é público (não exige `X-Clinic-Slug`).
 - ❌ `tests/integration/test_webhook_idempotency.py`
 - ❌ `tests/integration/test_evolution_provider.py`
 - ❌ `tests/fixtures/evolution_webhooks/` com payloads reais
 
 ### 13. Verificação end-to-end
 - ✅ `make up` em <5min em máquina nova — stack sobe limpo: 7/7 containers UP (postgres, redis, langfuse-db, langfuse, web, worker, beat) com worker descobrindo automaticamente as 2 tasks via autodiscover.
-- ✅ `make test` ≥ 30 testes verdes (≥ 10 RLS) — **43/43 verdes hoje** (40 RLS + 3 Celery); critério atingido com folga
+- ✅ `make test` ≥ 30 testes verdes (≥ 10 RLS) — **48/48 verdes hoje** (40 RLS + 3 Celery + 5 API); critério atingido com folga
 - ❌ Smoke: WhatsApp → eco em <10s, trace no Langfuse
 - ❌ Isolation manual com `psql` em duas clínicas
 - ❌ `docker build` da imagem prod boota com `.env.prod.example`
@@ -137,12 +138,11 @@ Onda 1 do item 7 fechada (8 modelos de cadastro tenant-aware com RLS comprovada 
 
 Próximas frentes (em ordem sugerida):
 
-1. **`config/api.py` + `GET /api/health`** (item 8) — primeiro endpoint Ninja, valida Postgres+Redis+Celery end-to-end. Atalho de smoke test pra todo o stack.
-2. **`POST /api/webhooks/whatsapp/{canal_id}`** (item 8) — usa o `webhook_secret` de `ClinicaCanal` (HMAC) + unique parcial em mensagens (idempotência) + dispatcha `process_inbound_message`. Esse é o "loop fechado" do MVP.
-3. **EvolutionProvider** (item 10) — HTTP client real para substituir o stub em `_entrega_via_provider_stub` de `send_outbox`.
-4. **Langfuse client + primeiro trace** (item 11) em `apps.observability`.
-5. **ADRs faltantes**: 0001 (Django vs n8n) e 0003 (Anthropic + OpenRouter) para fechar o trio fundacional.
-6. **Hardening: trocar `DATABASE_URL` para `app_readwrite`** em produção (item 13 último marcador) — habilita RLS de verdade em runtime, hoje ela só aplica nos testes via `SET LOCAL ROLE`.
+1. **`POST /api/webhooks/whatsapp/{canal_id}`** (item 8 final) — fecha o loop do MVP: valida HMAC com `webhook_secret` de `ClinicaCanal`, dedup pela unique parcial em mensagens, dispatcha `process_inbound_message.delay(...)`. Eco volta pelo `send_outbox`.
+2. **EvolutionProvider** (item 10) — HTTP client real (httpx) para substituir o stub `_entrega_via_provider_stub` em `send_outbox`.
+3. **Langfuse client + primeiro trace** (item 11) em `apps.observability`.
+4. **ADRs faltantes**: 0001 (Django vs n8n) e 0003 (Anthropic + OpenRouter) para fechar o trio fundacional.
+5. **Hardening: trocar `DATABASE_URL` para `app_readwrite`** em produção (item 13 último marcador) — habilita RLS de verdade em runtime, hoje ela só aplica nos testes via `SET LOCAL ROLE`.
 
 Critério para encerrar a Fase 1 (todos os 10 pontos do plano em
 [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1.md)
