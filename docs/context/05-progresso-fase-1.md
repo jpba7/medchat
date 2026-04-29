@@ -43,10 +43,10 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ✅ `.env.example` versionado
 
 ### 3. Estrutura de apps Django (9 apps)
-- ✅ `apps/core` — `TenantAwareModel`, `RLSMiddleware`, `with_tenant`, migration RLS
-- ⏳ `apps/clinics` — `Clinica` ✅; `ClinicaCanal` e `ClinicaPolitica` ❌
-- ❌ `apps/patients` — `Paciente`
-- ❌ `apps/catalog` — `Especialidade`, `Medico`, `Convenio`, `Disponibilidade`
+- ✅ `apps/core` — `TenantAwareModel`, `RLSMiddleware`, `with_tenant`, migrations RLS (0001 setup + 0002 GRANTs)
+- ✅ `apps/clinics` — `Clinica`, `ClinicaCanal`, `ClinicaPolitica`
+- ✅ `apps/patients` — `Paciente`
+- ✅ `apps/catalog` — `Especialidade`, `Medico`, `Convenio`, `MedicoConvenio`, `MedicoDisponibilidade`
 - ❌ `apps/appointments` — `Agendamento` + exclusion constraint
 - ❌ `apps/conversations` — `Conversa`, `Mensagem`, `Handoff`
 - ❌ `apps/bot` — scaffolding (Fase 2 implementa)
@@ -76,11 +76,12 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ✅ `apps/core/middleware.py` — `RLSMiddleware` (resolve via `X-Clinic-Slug`; fail-loud 500)
 - ✅ `apps/core/tenancy.py` — `tenant_session` (context manager) + `@with_tenant` (decorator Celery)
 - ✅ `apps/core/migrations/0001_rls_setup.py` — roles `app_readwrite`/`app_jobs` + helper `apply_rls_policy()`
+- ✅ `apps/core/migrations/0002_grants_app_roles.py` — atualiza helper para conceder GRANT junto com a policy + GRANTs explícitos nas 9 tabelas existentes (descoberto via teste: `medchat` é SUPERUSER + BYPASSRLS, então prod precisa conectar como `app_readwrite` para RLS aplicar)
 - ✅ Migration base de `clinicas` (sem RLS — é raiz da tenancy, intencional)
-- ❌ Migrations base: `clinica_canais`, `clinica_politicas` com policies RLS
+- ✅ Migrations base: `clinica_canais`, `clinica_politicas` com policies RLS
 
 ### 7. Migrations de domínio
-- ❌ `pacientes`, `especialidades`, `medicos`, `convenios`, `medico_convenios`, `medico_disponibilidades`
+- ✅ Onda 1 (cadastro): `clinica_canais`, `clinica_politicas`, `pacientes`, `especialidades`, `medicos`, `convenios`, `medico_convenios`, `medico_disponibilidades` — todas com RLS aplicada
 - ❌ `agendamentos` com exclusion constraint `btree_gist`
 - ❌ `conversas`, `mensagens` (unique `(canal_id, external_id)`), `handoffs`
 - ❌ `outbox`, `eventos_bot`
@@ -110,41 +111,37 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ❌ Health endpoint completo
 
 ### 12. Testes
-- ⏳ `tests/integration/test_rls.py` — fundação coberta (8 testes: roles, helpers `apply_rls_policy`/`drop_rls_policy`, `tenant_session`, `@with_tenant`, `Clinica` global). Falta ≥ 1 caso por tabela tenant-owned (depende do item 7 — quando `Paciente`, `Medico` etc. existirem).
+- ⏳ `tests/integration/test_rls.py` — **24 testes verdes**: 8 da fundação (roles, helpers, `tenant_session`, `@with_tenant`, `Clinica` global) + 8 de isolation cross-tenant (1 por tabela tenant-aware da Onda 1, com `SET LOCAL ROLE app_readwrite` para exercer RLS de verdade) + 8 de defesa em profundidade (`TenantAwareModel.save()` rejeita `clinica_id` ≠ `app.clinica_id`). Falta cobertura para Agendamento/Conversa/Mensagem/Handoff/Outbox/EventoBot quando esses modelos existirem.
 - ❌ `tests/integration/test_webhook_idempotency.py`
 - ❌ `tests/integration/test_evolution_provider.py`
 - ❌ `tests/fixtures/evolution_webhooks/` com payloads reais
 
 ### 13. Verificação end-to-end
 - ⏳ `make up` em <5min em máquina nova — stack sobe limpo (postgres, redis, langfuse-db, langfuse, web healthy; worker/beat esperadamente exit-2 até item 9 entregar `config/celery.py`)
-- ⏳ `make test` ≥ 30 testes verdes (≥ 10 RLS) — 8/8 RLS passando hoje; total final só após itens 7-11
+- ⏳ `make test` ≥ 30 testes verdes (≥ 10 RLS) — **24/24 verdes hoje** (16 RLS); total final só após itens 7 (restantes), 8, 9, 10, 11
 - ❌ Smoke: WhatsApp → eco em <10s, trace no Langfuse
 - ❌ Isolation manual com `psql` em duas clínicas
 - ❌ `docker build` da imagem prod boota com `.env.prod.example`
+- ❌ **Pendência crítica de hardening**: aplicação Django ainda conecta como `medchat` (owner, SUPERUSER+BYPASSRLS). Em produção, trocar a `DATABASE_URL` para usar `app_readwrite` (sem privilégio de bypass). Sem isso, RLS é ignorada em runtime apesar das policies estarem corretas.
 
 ## Próximo passo concreto
 
-Stack já está de pé contra Postgres real (após recuperação do Docker em 2026-04-29 — snapshotter overlayfs do containerd ficou corrompido depois de um `wsl --shutdown` no meio de uma operação de write; resolvido com `Clean / Purge data` via UI do Docker Desktop). Validações já passando:
+Onda 1 do item 7 fechada (8 modelos de cadastro tenant-aware com RLS comprovada por testes). Stack roda contra Postgres real, 24 testes verdes. Validações:
 
 - `docker compose ps` → 5 containers healthy (postgres com pgvector 0.8.2, redis, langfuse-db, langfuse, web)
-- `uv run python manage.py migrate` → aplica `core/0001_rls_setup` + `clinics/0001_initial` + 19 do `django_celery_beat`
-- `uv run pytest tests/integration/test_rls.py -v` → 8/8 verdes em ~2s
-- `curl http://localhost:8000/admin/` → HTTP 302 (uvicorn OK)
-- `curl http://localhost:3000` → HTTP 200 (langfuse OK)
+- `uv run python manage.py migrate` → aplica todas migrations sem erro
+- `uv run pytest tests/ -v` → **24/24 verdes em ~4s** (16 RLS)
+- `psql -c "\dt"` no medchat-postgres → 9 tabelas tenant-aware/global do MedChat + tabelas Django/celery_beat
+- `psql -c "SELECT relname, relrowsecurity FROM pg_class WHERE ..."` → todas as 8 tenant-aware com `relrowsecurity=t`
 
 Próximas frentes (em ordem sugerida):
 
-1. **Tabelas tenant-owned com RLS aplicada via helper** (item 7):
-   - `apps/clinics`: `ClinicaCanal`, `ClinicaPolitica`.
-   - `apps/patients`: `Paciente`.
-   - `apps/catalog`: `Especialidade`, `Medico`, `Convenio`,
-     `MedicoConvenio`, `MedicoDisponibilidade`.
-   - Cada migration: `CreateModel` + `RunSQL("SELECT
-     apply_rls_policy('<tabela>');")`.
-   - Adicionar 1 teste de isolation por tabela em `tests/integration/test_rls.py`.
-2. **`config/celery.py`** (item 9) para destravar worker/beat. Hoje saem com exit 2 — `Module 'config' has no attribute 'celery'`. Sem isso, nem dá pra rodar a primeira task `process_inbound_message`.
-3. **ADR-001** (Django vs n8n) e **ADR-003** (Anthropic + OpenRouter) para fechar o trio fundacional.
-4. **`config/api.py` + `GET /api/health`** (item 8) — primeiro endpoint Ninja, valida Postgres+Redis end-to-end.
+1. **Onda 2 do item 7 — `Agendamento`** com `EXCLUDE USING GIST` (`btree_gist` extension) que impede overlap de consultas do mesmo médico. É o conceito Postgres mais rico da Fase 1 — merece commit dedicado.
+2. **Onda 3 do item 7 — Conversa, Mensagem, Handoff** — depende de `ClinicaCanal` (✅) e `Paciente` (✅) já existirem; introduz unique `(canal_id, external_id)` para idempotência de webhook.
+3. **`config/celery.py`** (item 9) para destravar worker/beat. Hoje saem com exit 2 — `Module 'config' has no attribute 'celery'`.
+4. **ADR-001** (Django vs n8n) e **ADR-003** (Anthropic + OpenRouter) para fechar o trio fundacional.
+5. **`config/api.py` + `GET /api/health`** (item 8) — primeiro endpoint Ninja, valida Postgres+Redis end-to-end.
+6. **Hardening: trocar `DATABASE_URL` para `app_readwrite`** em produção (item 13 último marcador) — habilita RLS de verdade em runtime, hoje ela só aplica nos testes via `SET LOCAL ROLE`.
 
 Critério para encerrar a Fase 1 (todos os 10 pontos do plano em
 [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1.md)
