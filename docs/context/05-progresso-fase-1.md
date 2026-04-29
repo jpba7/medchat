@@ -90,7 +90,7 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ✅ `config/api.py` — NinjaAPI raiz, montada em `/api/` no `config/urls.py`
 - ✅ `GET /api/health` — Postgres + Redis + Celery (`control.ping`) — retorna 200 (`status=ok`) ou 503 (`status=degraded`) + payload com check por dependência
 - ✅ `GET /api/ready` — só Postgres (probe rápido para LB/k8s)
-- ❌ `POST /api/webhooks/whatsapp/{canal_id}` — valida HMAC, idempotência, dispatch Celery
+- ✅ `POST /api/webhooks/whatsapp/{canal_id}` — fecha o loop do MVP: HMAC-SHA256 valida origem (header `X-Hub-Signature-256`), unique parcial em `mensagens` dedup retries do provedor (200 + `duplicado`), eventos não-mensagem retornam `ignorado`, dispatch via `process_inbound_message.apply_async(task_id=external_id, ...)` (idempotência adicional via Celery). Helpers `verifica_hmac_sha256` + `parse_evolution_payload` em `apps/channels/webhook.py`.
 - ❌ `POST /api/webhooks/langfuse` — stub (Fase 3)
 
 ### 9. Celery + tarefas
@@ -114,14 +114,15 @@ Plano completo em [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1
 - ⏳ `tests/integration/test_rls.py` — **40 testes RLS verdes** (8 fundação + 24 Onda 1 + 4 Agendamento + 8 Onda 3 + 4 Onda 4). Cobertura completa do item 7.
 - ⏳ `tests/integration/test_tasks.py` — **3 testes Celery verdes** rodando com `CELERY_TASK_ALWAYS_EAGER`: eco MVP (`process_inbound_message` cria saída + Outbox), `send_outbox` marca como `enviado`, `send_outbox` é idempotente quando linha já não está `pendente`.
 - ⏳ `tests/integration/test_api.py` — **5 testes verdes** dos health endpoints: `/ready` 200, `/health` 200 com todas dependências, `/health` 503 quando Celery sem workers, `/health` 503 quando Redis falha, garantia de que `/api/health` é público (não exige `X-Clinic-Slug`).
+- ⏳ `tests/integration/test_webhook.py` — **5 testes verdes** do loop completo: 404 quando canal inexiste, 401 quando HMAC inválido, 200 caminho feliz com efeito completo (Paciente + Conversa + Mensagem entrada + saída do eco MVP + Outbox enfileirado, tudo numa request), reentrega dedupa via unique parcial e retorna `duplicado`, evento sem texto retorna `ignorado` sem efeito.
 - ❌ `tests/integration/test_webhook_idempotency.py`
 - ❌ `tests/integration/test_evolution_provider.py`
 - ❌ `tests/fixtures/evolution_webhooks/` com payloads reais
 
 ### 13. Verificação end-to-end
 - ✅ `make up` em <5min em máquina nova — stack sobe limpo: 7/7 containers UP (postgres, redis, langfuse-db, langfuse, web, worker, beat) com worker descobrindo automaticamente as 2 tasks via autodiscover.
-- ✅ `make test` ≥ 30 testes verdes (≥ 10 RLS) — **48/48 verdes hoje** (40 RLS + 3 Celery + 5 API); critério atingido com folga
-- ❌ Smoke: WhatsApp → eco em <10s, trace no Langfuse
+- ✅ `make test` ≥ 30 testes verdes (≥ 10 RLS) — **53/53 verdes hoje** (40 RLS + 3 Celery + 5 API + 5 Webhook); critério atingido com folga
+- ⏳ Smoke: WhatsApp → eco em <10s, trace no Langfuse — **loop coberto end-to-end no `test_webhook_aceita_mensagem_e_dispara_eco`**: webhook recebe payload Evolution, cria Mensagem entrada, dispara `process_inbound_message` (eager) que cria Mensagem saída + Outbox; falta apenas o `EvolutionProvider` real (item 10) para drenar o Outbox e o trace no Langfuse (item 11).
 - ❌ Isolation manual com `psql` em duas clínicas
 - ❌ `docker build` da imagem prod boota com `.env.prod.example`
 - ❌ **Pendência crítica de hardening**: aplicação Django ainda conecta como `medchat` (owner, SUPERUSER+BYPASSRLS). Em produção, trocar a `DATABASE_URL` para usar `app_readwrite` (sem privilégio de bypass). Sem isso, RLS é ignorada em runtime apesar das policies estarem corretas.
@@ -138,11 +139,10 @@ Onda 1 do item 7 fechada (8 modelos de cadastro tenant-aware com RLS comprovada 
 
 Próximas frentes (em ordem sugerida):
 
-1. **`POST /api/webhooks/whatsapp/{canal_id}`** (item 8 final) — fecha o loop do MVP: valida HMAC com `webhook_secret` de `ClinicaCanal`, dedup pela unique parcial em mensagens, dispatcha `process_inbound_message.delay(...)`. Eco volta pelo `send_outbox`.
-2. **EvolutionProvider** (item 10) — HTTP client real (httpx) para substituir o stub `_entrega_via_provider_stub` em `send_outbox`.
-3. **Langfuse client + primeiro trace** (item 11) em `apps.observability`.
-4. **ADRs faltantes**: 0001 (Django vs n8n) e 0003 (Anthropic + OpenRouter) para fechar o trio fundacional.
-5. **Hardening: trocar `DATABASE_URL` para `app_readwrite`** em produção (item 13 último marcador) — habilita RLS de verdade em runtime, hoje ela só aplica nos testes via `SET LOCAL ROLE`.
+1. **EvolutionProvider** (item 10) — HTTP client real (httpx) para substituir o stub `_entrega_via_provider_stub` em `send_outbox`. Atualiza `Mensagem.external_id` quando Evolution responde com o ID, fechando o ciclo de envio. Inclui parser real do webhook payload (substitui o `parse_evolution_payload` mínimo de hoje).
+2. **Langfuse client + primeiro trace** (item 11) em `apps.observability` — primeiro trace manual no webhook handler, validar que aparece no UI Langfuse local.
+3. **ADRs faltantes**: 0001 (Django vs n8n) e 0003 (Anthropic + OpenRouter) para fechar o trio fundacional.
+4. **Hardening: trocar `DATABASE_URL` para `app_readwrite`** em produção (item 13 último marcador) — habilita RLS de verdade em runtime, hoje ela só aplica nos testes via `SET LOCAL ROLE`.
 
 Critério para encerrar a Fase 1 (todos os 10 pontos do plano em
 [`../plans/01-fundacao-fase-1.md`](../plans/01-fundacao-fase-1.md)
