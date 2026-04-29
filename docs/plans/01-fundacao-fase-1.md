@@ -19,7 +19,7 @@ Resultado esperado: repositório pronto para construir o agente AI com confianç
 | Camada | Escolha | Nota |
 |---|---|---|
 | Linguagem/gerenciador | Python 3.13 + `uv` | `uv init`, `uv add`, `uv run` |
-| Framework web | Django 5.x + Django Ninja | Ninja = API tipada estilo FastAPI |
+| Framework web | Django 6.x + Django Ninja | Ninja = API tipada estilo FastAPI |
 | Banco | Postgres 17 com `pgvector` | Multi-tenant via RLS (`SET LOCAL app.clinica_id`) |
 | Cache/broker | Redis 7 | Celery broker + cache de app |
 | Async | Celery + Celery Beat (django-celery-beat) | Jobs + cron de lembretes |

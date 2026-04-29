@@ -22,7 +22,7 @@ Detalhes em [`docs/context/`](docs/context/).
 | Camada | Escolha |
 |---|---|
 | Linguagem/gerenciador | Python 3.13 + `uv` |
-| Web | Django 5 + Django Ninja |
+| Web | Django 6 + Django Ninja |
 | Banco | Postgres 17 com `pgvector`, RLS multi-tenant |
 | Cache/broker | Redis 7 |
 | Async | Celery + Celery Beat |
@@ -99,25 +99,33 @@ Commits do MedChat são **material de aprendizado**, não só registro técnico.
 
 ## Comandos comuns
 
-> ⚠️ Em construção — Fase 1 ainda não terminou. À medida que o `Makefile` for criado, os atalhos abaixo passam a funcionar:
+`Makefile` na raiz consolida os atalhos de dev. Os principais:
 
 ```bash
-# (Fase 1 vai entregar)
-make up                # docker compose up -d
-make down              # docker compose down
-make migrate           # python manage.py migrate
-make test              # pytest
+make up                # docker compose up -d (stack completo)
+make down              # docker compose down (mantém volumes)
+make build             # rebuilda imagens
+make logs              # docker compose logs -f --tail=100
+make ps                # status dos containers
+
+make migrate           # uv run python manage.py migrate (no container web)
+make makemigrations    # gera novas migrations
+make shell             # Django shell no container web
+make createsuperuser   # cria superuser
+
+make test              # pytest com config.settings.test
 make lint              # ruff check + format --check
-make shell             # python manage.py shell_plus
-make logs              # docker compose logs -f
+make format            # ruff format + check --fix
+
+make clean             # docker compose down -v (remove volumes!)
 ```
 
-Por enquanto, os equivalentes manuais:
+`make help` lista tudo. Para rodar coisas fora do `make`:
 ```bash
 uv add <pacote>                   # adicionar dependência
 uv sync                           # sincronizar lockfile
-uv run python manage.py <cmd>     # rodar comandos Django
-uv run pytest                     # rodar testes
+uv run python manage.py <cmd>     # comandos Django direto no host
+uv run pytest                     # testes direto no host (precisa do Postgres do compose UP)
 ```
 
 ## Histórico
