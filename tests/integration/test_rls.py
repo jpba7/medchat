@@ -36,6 +36,7 @@ from apps.catalog.models import (
     MedicoDisponibilidade,
 )
 from apps.clinics.models import Clinica, ClinicaCanal, ClinicaPolitica
+from apps.conversations.models import Conversa, Handoff, Mensagem
 from apps.core.tenancy import tenant_session, with_tenant
 from apps.patients.models import Paciente
 
@@ -545,3 +546,175 @@ def test_agendamento_cancelado_libera_slot(tenant_a):
             fim_em=datetime(2026, 5, 3, 9, 30, tzinfo=timezone.utc),
         )
         assert novo.id != original.id
+
+
+# ---------------------------------------------------------------------------
+# Onda 3 — Conversa, Mensagem, Handoff. O conceito-chave testado é a
+# **idempotência de webhook** via unique parcial em `mensagens`.
+# ---------------------------------------------------------------------------
+
+
+def _cria_conversa_minima(clinica):
+    """Cria paciente + canal + conversa na clínica corrente e retorna
+    a tupla. Pré-condição: `app.clinica_id` da sessão atual já
+    está setado para `clinica`.
+    """
+    paciente = Paciente.objects.create(
+        clinica=clinica, telefone_e164="+5511555555555", nome="Ana"
+    )
+    canal = ClinicaCanal.objects.create(
+        clinica=clinica,
+        tipo=ClinicaCanal.Tipo.WHATSAPP_EVOLUTION,
+        numero_e164="+5511222222222",
+    )
+    conversa = Conversa.objects.create(clinica=clinica, paciente=paciente, canal=canal)
+    return paciente, canal, conversa
+
+
+@pytest.mark.django_db(transaction=True)
+def test_isolation_conversa(tenant_a, clinica_b):
+    with tenant_a() as clinica:
+        _, _, conversa = _cria_conversa_minima(clinica)
+        conversa_id = conversa.id
+
+    with _sessao_app_readwrite(clinica_b.id):
+        assert not Conversa.objects.filter(id=conversa_id).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_isolation_mensagem(tenant_a, clinica_b):
+    with tenant_a() as clinica:
+        _, canal, conversa = _cria_conversa_minima(clinica)
+        mensagem_id = Mensagem.objects.create(
+            conversa=conversa,
+            canal=canal,
+            direcao=Mensagem.Direcao.ENTRADA,
+            remetente="+5511555555555",
+            conteudo="oi",
+            external_id="wamid_isolated_1",
+        ).id
+
+    with _sessao_app_readwrite(clinica_b.id):
+        assert not Mensagem.objects.filter(id=mensagem_id).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_isolation_handoff(tenant_a, clinica_b):
+    with tenant_a() as clinica:
+        _, _, conversa = _cria_conversa_minima(clinica)
+        handoff_id = Handoff.objects.create(
+            conversa=conversa,
+            gatilho=Handoff.Gatilho.PEDIDO_EXPLICITO,
+        ).id
+
+    with _sessao_app_readwrite(clinica_b.id):
+        assert not Handoff.objects.filter(id=handoff_id).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_conversa_save_rejeita_clinica_id_diferente_da_sessao(clinica_a, clinica_b):
+    with tenant_session(clinica_b.id):
+        paciente_b, canal_b, _ = _cria_conversa_minima(clinica_b)
+
+    with tenant_session(clinica_a.id):
+        with pytest.raises(ValidationError):
+            Conversa(
+                clinica=clinica_b,
+                paciente=paciente_b,
+                canal=canal_b,
+            ).save()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_mensagem_save_rejeita_clinica_id_de_outra_conversa(clinica_a, clinica_b):
+    """`clinica_id` é auto-populado da conversa pai. Salvar Mensagem
+    cuja conversa é da clínica B em sessão de A → ValidationError."""
+    with tenant_session(clinica_b.id):
+        _, canal_b, conversa_b = _cria_conversa_minima(clinica_b)
+
+    with tenant_session(clinica_a.id):
+        with pytest.raises(ValidationError):
+            Mensagem(
+                conversa=conversa_b,
+                canal=canal_b,
+                direcao=Mensagem.Direcao.ENTRADA,
+                remetente="+5511555555555",
+                conteudo="vazamento?",
+            ).save()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_handoff_save_rejeita_clinica_id_de_outra_conversa(clinica_a, clinica_b):
+    with tenant_session(clinica_b.id):
+        _, _, conversa_b = _cria_conversa_minima(clinica_b)
+
+    with tenant_session(clinica_a.id):
+        with pytest.raises(ValidationError):
+            Handoff(
+                conversa=conversa_b,
+                gatilho=Handoff.Gatilho.PEDIDO_EXPLICITO,
+            ).save()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_mensagem_idempotencia_canal_external_id(tenant_a):
+    """O conceito-chave da Onda 3 — `(canal, external_id)` é unique
+    parcial. Webhook do provedor pode reentregar a mesma mensagem
+    (timeout, retry); a 2ª inserção com o mesmo par deve falhar
+    com `IntegrityError` — Postgres protege contra duplicação
+    antes de chegar no Celery.
+    """
+    with tenant_a() as clinica:
+        _, canal, conversa = _cria_conversa_minima(clinica)
+
+        Mensagem.objects.create(
+            conversa=conversa,
+            canal=canal,
+            direcao=Mensagem.Direcao.ENTRADA,
+            remetente="+5511555555555",
+            conteudo="primeira entrega",
+            external_id="wamid_dedup_42",
+        )
+
+        with pytest.raises(IntegrityError):
+            Mensagem.objects.create(
+                conversa=conversa,
+                canal=canal,
+                direcao=Mensagem.Direcao.ENTRADA,
+                remetente="+5511555555555",
+                conteudo="reentrega do mesmo evento",
+                external_id="wamid_dedup_42",
+            )
+
+
+@pytest.mark.django_db(transaction=True)
+def test_mensagem_external_id_null_permite_multiplas(tenant_a):
+    """A unique é PARCIAL (`WHERE external_id IS NOT NULL`).
+    Mensagens geradas localmente (saídas que ainda não foram
+    confirmadas pelo provedor) têm `external_id=NULL` e devem
+    coexistir múltiplas — caso contrário o bot só conseguiria
+    enfileirar uma resposta por canal por vez."""
+    with tenant_a() as clinica:
+        _, canal, conversa = _cria_conversa_minima(clinica)
+
+        # Duas saídas locais sem external_id — sem o WHERE da
+        # constraint, isso falharia (NULL = NULL é UNKNOWN no
+        # Postgres, mas tradicional UNIQUE em alguns SGBDs trata
+        # NULLs como iguais).
+        m1 = Mensagem.objects.create(
+            conversa=conversa,
+            canal=canal,
+            direcao=Mensagem.Direcao.SAIDA,
+            remetente="bot",
+            conteudo="resposta 1, ainda não enviada",
+            external_id=None,
+        )
+        m2 = Mensagem.objects.create(
+            conversa=conversa,
+            canal=canal,
+            direcao=Mensagem.Direcao.SAIDA,
+            remetente="bot",
+            conteudo="resposta 2, ainda não enviada",
+            external_id=None,
+        )
+        assert m1.id != m2.id
