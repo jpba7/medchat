@@ -1,5 +1,5 @@
 ---
-name: conversations
+title: conversations
 type: entidade
 tags: [tenant-aware, conversa, mensagem, handoff, idempotencia]
 ---

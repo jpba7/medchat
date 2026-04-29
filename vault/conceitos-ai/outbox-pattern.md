@@ -1,5 +1,5 @@
 ---
-name: outbox-pattern
+title: outbox-pattern
 type: conceito-ai
 tags: [outbox, celery, mensageria, integridade]
 ---

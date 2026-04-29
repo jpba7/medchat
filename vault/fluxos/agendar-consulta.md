@@ -1,5 +1,5 @@
 ---
-name: agendar-consulta
+title: agendar-consulta
 type: fluxo
 tags: [fluxo-principal, agendamento]
 ---

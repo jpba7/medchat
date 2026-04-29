@@ -1,5 +1,5 @@
 ---
-name: README
+title: README
 type: meta
 tags: [vault, regras]
 ---
@@ -40,11 +40,13 @@ Toda nota tem frontmatter YAML mínimo:
 
 ```yaml
 ---
-name: <identificador curto, único>
+title: <identificador curto, único>
 type: entidade | conceito-ai | integracao | fluxo | decisao | aprendizado | diario
 tags: [...]   # opcional, ajuda navegação Obsidian
 ---
 ```
+
+`title:` é o campo **canônico do Obsidian** — controla o nome exibido no graph view, em tabs e em toda a UI. Usar `name:` (como costumam fazer outros vaults) faz com que Obsidian renderize nodes sem rótulo no graph, porque `name` não é campo reconhecido pela engine de Properties. `aliases:` (plural) seria pra nomes alternativos da mesma nota — não usamos.
 
 Sem `created`, `last_reviewed`, `ttl_days`, `source`. Pra saber idade de uma nota: `git log -- vault/<path>`.
 

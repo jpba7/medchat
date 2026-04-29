@@ -1,5 +1,5 @@
 ---
-name: agendamento
+title: agendamento
 type: entidade
 tags: [tenant-aware, agendamento, exclusion-constraint, anti-overlap]
 ---

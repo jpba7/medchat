@@ -1,5 +1,5 @@
 ---
-name: decisoes-index
+title: decisoes-index
 type: decisao
 tags: [index]
 ---

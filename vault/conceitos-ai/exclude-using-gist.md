@@ -1,5 +1,5 @@
 ---
-name: exclude-using-gist
+title: exclude-using-gist
 type: conceito-ai
 tags: [postgres, constraint, agendamento, anti-overlap]
 ---

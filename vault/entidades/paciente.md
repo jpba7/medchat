@@ -1,5 +1,5 @@
 ---
-name: paciente
+title: paciente
 type: entidade
 tags: [tenant-aware, entidade-central, lgpd]
 ---

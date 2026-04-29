@@ -1,5 +1,5 @@
 ---
-name: outbox
+title: outbox
 type: entidade
 tags: [tenant-aware, outbox, evento-bot, observabilidade, celery]
 ---

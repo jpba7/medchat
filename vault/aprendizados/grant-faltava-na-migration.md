@@ -1,5 +1,5 @@
 ---
-name: grant-faltava-na-migration
+title: grant-faltava-na-migration
 type: aprendizado
 tags: [rls, postgres, migration, grant]
 ---

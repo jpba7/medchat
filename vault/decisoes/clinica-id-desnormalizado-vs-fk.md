@@ -1,5 +1,5 @@
 ---
-name: clinica-id-desnormalizado-vs-fk
+title: clinica-id-desnormalizado-vs-fk
 type: decisao
 tags: [rls, multi-tenant, defesa-em-profundidade, schema]
 ---
