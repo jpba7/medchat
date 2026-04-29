@@ -18,7 +18,7 @@ tags: []
 ## Vault candidates sinalizados
 
 - 💡 {item} → ainda não capturado
-- ✅ {item} → virou `[[entidades/<x>]]`
+- ✅ {item} → virou `entidades/<entidade>`
 
 ## Próximo passo
 
@@ -26,4 +26,4 @@ tags: []
 
 ## Notas tocadas hoje
 
-- `[[<path>]]`
+- `<path-da-nota>`

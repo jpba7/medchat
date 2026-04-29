@@ -45,9 +45,9 @@ O que esta entidade representa no produto. 1-3 linhas.
 
 ## Notas relacionadas
 
-- `[[fluxos/<fluxo-que-toca-essa-entidade>]]`
-- `[[integracoes/<integracao-relacionada>]]`
-- `[[conceitos-ai/<conceito-relacionado>]]`
+- `fluxos/<fluxo-que-toca-essa-entidade>`
+- `integracoes/<integracao-relacionada>`
+- `conceitos-ai/<conceito-relacionado>`
 
 ## Referências externas
 

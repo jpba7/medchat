@@ -46,7 +46,7 @@ tags: [...]   # opcional, ajuda navegação Obsidian
 ---
 ```
 
-`title:` é o campo **canônico do Obsidian** — controla o nome exibido no graph view, em tabs e em toda a UI. Usar `name:` (como costumam fazer outros vaults) faz com que Obsidian renderize nodes sem rótulo no graph, porque `name` não é campo reconhecido pela engine de Properties. `aliases:` (plural) seria pra nomes alternativos da mesma nota — não usamos.
+`title:` aqui é convenção **interna do projeto** — identificador legível da nota no frontmatter (espelha o filename, sem `.md`). **Não controla rendering do Obsidian.** O label do node no graph view vem do **filename**, não do frontmatter. Os campos canônicos do Obsidian Properties são `aliases`, `cssclasses`, `description`, `mobile`, `permalink`, `publish` ([docs](https://help.obsidian.md/properties)) — `title:` e `name:` não são reservados. `aliases:` (plural) é pra nomes alternativos legítimos de uma nota — não usamos por hábito.
 
 Sem `created`, `last_reviewed`, `ttl_days`, `source`. Pra saber idade de uma nota: `git log -- vault/<path>`.
 
