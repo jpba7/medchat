@@ -40,6 +40,7 @@ Detalhes em [`docs/context/`](docs/context/).
 3. [`docs/plans/01-fundacao-fase-1.md`](docs/plans/01-fundacao-fase-1.md) — plano da fase atual
 4. [`docs/context/03-decisoes-mvp.md`](docs/context/03-decisoes-mvp.md) — decisões fechadas que não se rediscutem
 5. ADR(s) recém-criadas em `docs/adr/` (se houver)
+6. [`vault/MOC.md`](vault/MOC.md) — índice do vault de conhecimento atômico
 
 ## Regras obrigatórias
 
@@ -52,6 +53,24 @@ Detalhes em [`docs/context/`](docs/context/).
 7. **Antes de cada feature AI** novo, criar um `.md` curto em `docs/ai-engineering/` explicando conceito + por que usamos + como funciona + links externos. Documentar antes ou junto, nunca depois.
 8. **Decisões arquiteturais grandes** geram um ADR em `docs/adr/NNNN-titulo.md`. Imutável depois de aceito.
 9. **Teste manual + automatizado antes de declarar pronto.** `make test` verde + smoke manual da feature.
+
+## Vault de conhecimento
+
+[`vault/`](vault/) é a base de conhecimento **atômica e operacional** do projeto. Complementa `docs/` (que é narrativo e macro). Cada nota cobre uma entidade, integração, fluxo de conversação, conceito AI, decisão pequena ou aprendizado.
+
+**Regra `Grep`-first.** Antes de responder sobre:
+
+- Entidade do domínio nominada (`Clinica`, `Paciente`, `Agendamento`, `Conversa`, `Medico`, ...).
+- Tag/setting de domínio (`clinica_id`, `app.clinica_id`, RLS, `BYPASSRLS`, `webhook_secret`, `outbox`).
+- Integração externa (Evolution API, WhatsApp Cloud API, Anthropic SDK, OpenRouter, Langfuse, Celery).
+- Fluxo de conversação (agendar, remarcar, cancelar, lembrete, handoff).
+- Conceito AI usado no produto (prompt caching, tool use, evals, RAG, agentic loop).
+
+→ **`Grep` em `vault/` primeiro.** Se encontrar nota, ler antes de responder. **Citar a nota usada na resposta** (ajuda o usuário a auditar e atualizar).
+
+**Captura via `/capture`.** Durante a sessão, sinalize candidatos vault-worthy com `💡 vault candidate: <descrição>`. Não escreva no vault inline. Ao final, usuário roda `/capture` pra revisar e aprovar batch. Detalhes: [`vault/README.md`](vault/README.md), comando: [`.claude/commands/capture.md`](.claude/commands/capture.md).
+
+**Não capturar nunca**: credenciais, `.env`, PII de paciente/médico, valores comerciais cliente-específicos. Vault vai pro GitHub junto com código.
 
 ## Estilo de trabalho com Claude
 
