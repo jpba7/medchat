@@ -30,6 +30,11 @@ logger = logging.getLogger(__name__)
 PUBLIC_PATH_PREFIXES: tuple[str, ...] = (
     "/api/health",
     "/api/ready",
+    # Webhook é público em nível de middleware: o tenant é resolvido
+    # pelo `canal_id` no path (lookup em `ClinicaCanal`) antes de
+    # qualquer query tenant-aware. O handler abre `tenant_session`
+    # explicitamente após validar HMAC.
+    "/api/webhooks/",
     "/admin",
     "/static",
 )
@@ -74,9 +79,7 @@ class RLSMiddleware:
 
     @staticmethod
     def _is_public(request: HttpRequest) -> bool:
-        return any(
-            request.path.startswith(prefix) for prefix in PUBLIC_PATH_PREFIXES
-        )
+        return any(request.path.startswith(prefix) for prefix in PUBLIC_PATH_PREFIXES)
 
     @staticmethod
     def _resolve_tenant(request: HttpRequest) -> Optional[UUID]:
