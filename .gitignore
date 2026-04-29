@@ -82,8 +82,15 @@ secrets/
 .langchain/
 .cache/
 
-# Obsidian — config local do vault (workspace volátil, theme, plugins individuais)
+# Obsidian — config local antiga (vault dentro de subfolder; superseded por vault-as-repo)
 vault/.obsidian/
+
+# Obsidian — config canônica do projeto vai pro repo, mas estado volátil não
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/appearance.json
+.obsidian/hotkeys.json
 
 # Claude Code — diretório operacional de worktrees (não vai pro repo)
 .claude/worktrees/

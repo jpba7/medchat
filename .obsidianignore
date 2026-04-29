@@ -1,0 +1,19 @@
+# Código (Obsidian não precisa ver)
+apps/
+medchat/
+node_modules/
+.venv/
+venv/
+build/
+dist/
+__pycache__/
+
+# Claude Code interno
+.claude/worktrees/
+
+# Cache / IDEs
+.vscode/
+.idea/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
