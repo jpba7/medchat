@@ -105,11 +105,11 @@ Indexes:
 
 ## Notas relacionadas
 
-- [[clinica]] — tenant root
-- [[conversations]] — `Mensagem.external_id` é atualizada pelo `send_outbox` após envio
-- [[../conceitos-ai/outbox-pattern]] — explicação detalhada do pattern
-- [[../integracoes/evolution-api]] — primeiro consumidor da `Outbox`
-- [[../aprendizados/medchat-superuser-bypassrls]] — RLS aqui também é silenciada com SUPERUSER
+- [[entidades/clinica]] — tenant root
+- [[entidades/conversations]] — `Mensagem.external_id` é atualizada pelo `send_outbox` após envio
+- [[conceitos-ai/outbox-pattern]] — explicação detalhada do pattern
+- [[integracoes/evolution-api]] — primeiro consumidor da `Outbox`
+- [[aprendizados/medchat-superuser-bypassrls]] — RLS aqui também é silenciada com SUPERUSER
 
 ## Referências externas
 

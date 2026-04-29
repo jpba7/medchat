@@ -28,7 +28,7 @@ tags: [tenant-aware, conversa, mensagem, handoff, idempotencia]
 | `Mensagem` | Sim — `clinica_id` **desnormalizado da `conversa`** | `save()` auto-popula. Defesa em profundidade. |
 | `Handoff` | Sim — `clinica_id` **desnormalizado da `conversa`** | Idem. |
 
-Razão da desnormalização: [[../decisoes/clinica-id-desnormalizado-vs-fk]].
+Razão da desnormalização: [[decisoes/clinica-id-desnormalizado-vs-fk]].
 
 ## Campos — `Conversa`
 
@@ -91,7 +91,7 @@ models.UniqueConstraint(
 )
 ```
 
-Webhook reentrega bate o conflict; saídas locais com `NULL` coexistem. Ver [[../conceitos-ai/idempotencia-via-unique-parcial]].
+Webhook reentrega bate o conflict; saídas locais com `NULL` coexistem. Ver [[conceitos-ai/idempotencia-via-unique-parcial]].
 
 `clean()` valida `canal == conversa.canal`.
 
@@ -135,10 +135,10 @@ Indexes:
 
 ## Notas relacionadas
 
-- [[clinica]] — `ClinicaCanal` é o canal
-- [[paciente]] — `Paciente` é o outro lado da conversa
-- [[outbox]] — `send_outbox` atualiza `Mensagem.external_id` após envio
-- [[../conceitos-ai/idempotencia-via-unique-parcial]] — explicação detalhada da unique parcial
-- [[../decisoes/clinica-id-desnormalizado-vs-fk]] — desnormalização defesa em profundidade
-- [[../integracoes/evolution-api]] — provedor que entrega webhooks
-- [[../fluxos/agendar-consulta]] — fluxo passa por `Conversa` + `Mensagem`s
+- [[entidades/clinica]] — `ClinicaCanal` é o canal
+- [[entidades/paciente]] — `Paciente` é o outro lado da conversa
+- [[entidades/outbox]] — `send_outbox` atualiza `Mensagem.external_id` após envio
+- [[conceitos-ai/idempotencia-via-unique-parcial]] — explicação detalhada da unique parcial
+- [[decisoes/clinica-id-desnormalizado-vs-fk]] — desnormalização defesa em profundidade
+- [[integracoes/evolution-api]] — provedor que entrega webhooks
+- [[fluxos/agendar-consulta]] — fluxo passa por `Conversa` + `Mensagem`s

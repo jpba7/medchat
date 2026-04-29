@@ -89,8 +89,8 @@ Escolhemos **Caminho A** (desnormalizar + RLS própria) para todas as through-ta
 
 ## Notas relacionadas
 
-- [[../entidades/catalog]] — `MedicoConvenio` e `MedicoDisponibilidade` aplicam essa decisão
-- [[../entidades/conversations]] — `Mensagem` e `Handoff` aplicam essa decisão
-- [[../entidades/outbox]] — `EventoBot` aplica essa decisão
-- [[../aprendizados/medchat-superuser-bypassrls]] — defesa em profundidade ainda mais importante porque RLS é silenciada com SUPERUSER
-- [[../../docs/adr/0002-rls-vs-schema]] — decisão arquitetural macro de RLS vs schema-per-tenant
+- [[entidades/catalog]] — `MedicoConvenio` e `MedicoDisponibilidade` aplicam essa decisão
+- [[entidades/conversations]] — `Mensagem` e `Handoff` aplicam essa decisão
+- [[entidades/outbox]] — `EventoBot` aplica essa decisão
+- [[aprendizados/medchat-superuser-bypassrls]] — defesa em profundidade ainda mais importante porque RLS é silenciada com SUPERUSER
+- [`docs/adr/0002-rls-vs-schema.md`](../../docs/adr/0002-rls-vs-schema.md) — decisão arquitetural macro de RLS vs schema-per-tenant

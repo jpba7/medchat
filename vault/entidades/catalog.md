@@ -38,7 +38,7 @@ Todos tenant-owned (RLS) — clínicas não compartilham nada do catálogo.
 | `MedicoConvenio` | Sim — `clinica_id` **desnormalizado do FK** `medico` |
 | `MedicoDisponibilidade` | Sim — `clinica_id` **desnormalizado do FK** `medico` |
 
-Decisão de desnormalizar `clinica_id` em `MedicoConvenio` e `MedicoDisponibilidade` (em vez de derivar via JOIN) é **defesa em profundidade** — ver [[../decisoes/clinica-id-desnormalizado-vs-fk]].
+Decisão de desnormalizar `clinica_id` em `MedicoConvenio` e `MedicoDisponibilidade` (em vez de derivar via JOIN) é **defesa em profundidade** — ver [[decisoes/clinica-id-desnormalizado-vs-fk]].
 
 ## Campos importantes — `Especialidade`
 
@@ -117,8 +117,8 @@ Permite **múltiplas faixas/dia** (manhã + tarde com almoço entre) — não h�
 
 ## Notas relacionadas
 
-- [[clinica]] — `Clinica` é raiz; `ClinicaPolitica` define preço default por convênio
-- [[paciente]] — `Paciente` agenda com `Medico` que tem `MedicoConvenio` aceito
-- [[agendamento]] — referencia `Medico` e `Convenio`
-- [[../decisoes/clinica-id-desnormalizado-vs-fk]] — explica desnormalização das through-tables
-- [[../fluxos/agendar-consulta]] — fluxo usa esses modelos pra montar resposta
+- [[entidades/clinica]] — `Clinica` é raiz; `ClinicaPolitica` define preço default por convênio
+- [[entidades/paciente]] — `Paciente` agenda com `Medico` que tem `MedicoConvenio` aceito
+- [[entidades/agendamento]] — referencia `Medico` e `Convenio`
+- [[decisoes/clinica-id-desnormalizado-vs-fk]] — explica desnormalização das through-tables
+- [[fluxos/agendar-consulta]] — fluxo usa esses modelos pra montar resposta

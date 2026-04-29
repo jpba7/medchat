@@ -91,10 +91,10 @@ para cada item: POST <provedor>
 
 ## Notas relacionadas
 
-- [[../entidades/outbox]] — schema completo
-- [[../entidades/conversations]] — `Mensagem.external_id` é atualizada pelo `send_outbox` após envio
-- [[../integracoes/evolution-api]] — primeiro consumidor da outbox
-- [[idempotencia-via-unique-parcial]] — outro pilar de robustez do envio
+- [[entidades/outbox]] — schema completo
+- [[entidades/conversations]] — `Mensagem.external_id` é atualizada pelo `send_outbox` após envio
+- [[integracoes/evolution-api]] — primeiro consumidor da outbox
+- [[conceitos-ai/idempotencia-via-unique-parcial]] — outro pilar de robustez do envio
 
 ## Deep dive
 

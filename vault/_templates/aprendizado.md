@@ -4,9 +4,9 @@ type: aprendizado
 tags: []
 ---
 
-# Aprendizado: <título>
+# Aprendizado: {título}
 
-> Algo que descobrimos sobre <X> trabalhando no MedChat. Diferente de conceito-ai (genérico) — aqui é específico do nosso uso.
+> Algo que descobrimos sobre {X} trabalhando no MedChat. Diferente de conceito-ai (genérico) — aqui é específico do nosso uso.
 
 ## O que descobrimos
 
@@ -14,7 +14,7 @@ tags: []
 
 ## Como descobrimos
 
-- <bug, experimento, leitura, conversa>
+- {bug, experimento, leitura, conversa}
 
 ## Implicação
 
@@ -24,11 +24,11 @@ O que isso muda no jeito de pensar / construir o produto.
 
 - `[[entidades/<x>]]`
 - `[[fluxos/<y>]]`
-- <commit ou PR específico>
+- {commit ou PR específico}
 
 ## Próxima vez que importar
 
-<situação concreta em que esse aprendizado vai ser útil>
+{situação concreta em que esse aprendizado vai ser útil}
 
 ## Status
 

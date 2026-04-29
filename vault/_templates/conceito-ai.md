@@ -4,7 +4,7 @@ type: conceito-ai
 tags: []
 ---
 
-# <Nome do Conceito AI>
+# {Nome do Conceito AI}
 
 > Frase única: o que é esse conceito e por que o MedChat usa.
 
@@ -14,24 +14,24 @@ tags: []
 
 ## Por que usamos no MedChat
 
-- <motivo 1, ligado a um fluxo ou requisito do produto>
-- <motivo 2, se houver>
+- {motivo 1, ligado a um fluxo ou requisito do produto}
+- {motivo 2, se houver}
 
 Alternativas descartadas:
-- **<alternativa>**: por quê não.
+- **{alternativa}**: por quê não.
 
 ## Como aparece no código
 
-- <onde está implementado: arquivo, classe, função>
-- <env var ou config relevante>
+- {onde está implementado: arquivo, classe, função}
+- {env var ou config relevante}
 
 ## Modelo / SDK / biblioteca usada
 
-- <ex.: Anthropic SDK Python, modelo Sonnet 4.6 default>
+- {ex.: Anthropic SDK Python, modelo Sonnet 4.6 default}
 
 ## Gotchas
 
-- <armadilha conhecida deste conceito>
+- {armadilha conhecida deste conceito}
 
 ## Notas relacionadas
 
@@ -45,4 +45,4 @@ Alternativas descartadas:
 
 ## Referências externas
 
-- <link pra docs oficiais, paper, post>
+- {link pra docs oficiais, paper, post}

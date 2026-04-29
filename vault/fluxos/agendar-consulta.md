@@ -20,7 +20,7 @@ tags: [fluxo-principal, agendamento]
 1. **Webhook recebido**
    - Validação HMAC com `ClinicaCanal.webhook_secret`.
    - Resolução do tenant (`clinica` via FK do `ClinicaCanal`) — `RLSMiddleware` seta `app.clinica_id`.
-   - Dedup via constraint `UNIQUE (canal_id, external_id) WHERE external_id IS NOT NULL` em `mensagens` (ver [[../conceitos-ai/idempotencia-via-unique-parcial]]).
+   - Dedup via constraint `UNIQUE (canal_id, external_id) WHERE external_id IS NOT NULL` em `mensagens` (ver [[conceitos-ai/idempotencia-via-unique-parcial]]).
    - INSERT `Mensagem` (direção=`entrada`).
 
 2. **Resolver `Paciente`**
@@ -31,7 +31,7 @@ tags: [fluxo-principal, agendamento]
    - Procura `Conversa` ativa do paciente naquele canal (`status != 'encerrada'`). Se não existe, cria com `status='bot'`.
 
 4. **Bot interpreta intenção**
-   - Anthropic SDK ([[../conceitos-ai/anthropic-sdk]]) — Sonnet 4.6 default.
+   - Anthropic SDK ([[conceitos-ai/anthropic-sdk]]) — Sonnet 4.6 default.
    - Sistema-prompt traz `ClinicaPolitica` e contexto da clínica (prompt caching ajuda aqui).
    - Tool calls: `consultar_agenda(medico_id, data)`, `consultar_medicos(especialidade_id)`, `marcar_agendamento(...)`, etc.
    - Estado de slot fillers vai em `Conversa.contexto` JSONB.
@@ -44,14 +44,14 @@ tags: [fluxo-principal, agendamento]
    - Paciente escolhe slot. Mais mensagens trocadas se precisar mudar.
 
 7. **Persistência (`Agendamento`)**
-   - INSERT com `status='agendado'`. **`EXCLUDE USING GIST` no banco rejeita** se outro agendamento ATIVO do mesmo `medico_id` se sobrepuser ([[../conceitos-ai/exclude-using-gist]]).
+   - INSERT com `status='agendado'`. **`EXCLUDE USING GIST` no banco rejeita** se outro agendamento ATIVO do mesmo `medico_id` se sobrepuser ([[conceitos-ai/exclude-using-gist]]).
    - `clean()` valida cross-tenant: `paciente`, `medico`, `convenio` precisam ter mesmo `clinica_id`.
 
 8. **Outbox de confirmação**
    - INSERT `Mensagem` (direção=`saida`, `external_id=NULL`).
    - INSERT `Outbox` (`tipo='whatsapp_text'`, `payload={to_e164, body, mensagem_id}`, `status='pendente'`).
    - Retorno do request: 200 OK em ms.
-   - Em paralelo, Celery `send_outbox` task envia, atualiza `Mensagem.external_id` ([[../conceitos-ai/outbox-pattern]]).
+   - Em paralelo, Celery `send_outbox` task envia, atualiza `Mensagem.external_id` ([[conceitos-ai/outbox-pattern]]).
 
 9. **Eventos**
    - `EventoBot` registra `mensagem_recebida` (passo 1), `tool_call` (passo 4), `resposta_enviada` (passo 8) — pro painel da clínica.
@@ -70,23 +70,23 @@ tags: [fluxo-principal, agendamento]
 
 ## Entidades envolvidas
 
-- [[../entidades/clinica]] — tenant + `ClinicaCanal` + `ClinicaPolitica`
-- [[../entidades/paciente]] — resolvido na primeira mensagem
-- [[../entidades/catalog]] — `Especialidade`, `Medico`, `Convenio`, `MedicoConvenio`, `MedicoDisponibilidade`
-- [[../entidades/agendamento]] — criado no passo 7
-- [[../entidades/conversations]] — `Conversa`, `Mensagem`, `Handoff`
-- [[../entidades/outbox]] — `Outbox` (envio) + `EventoBot` (log)
+- [[entidades/clinica]] — tenant + `ClinicaCanal` + `ClinicaPolitica`
+- [[entidades/paciente]] — resolvido na primeira mensagem
+- [[entidades/catalog]] — `Especialidade`, `Medico`, `Convenio`, `MedicoConvenio`, `MedicoDisponibilidade`
+- [[entidades/agendamento]] — criado no passo 7
+- [[entidades/conversations]] — `Conversa`, `Mensagem`, `Handoff`
+- [[entidades/outbox]] — `Outbox` (envio) + `EventoBot` (log)
 
 ## Integrações envolvidas
 
-- [[../integracoes/evolution-api]] — canal WhatsApp (inbound webhook + outbound send)
+- [[integracoes/evolution-api]] — canal WhatsApp (inbound webhook + outbound send)
 
 ## Conceitos AI / arquitetura usados
 
-- [[../conceitos-ai/anthropic-sdk]] — provedor LLM
-- [[../conceitos-ai/exclude-using-gist]] — anti-overlap de agendamento
-- [[../conceitos-ai/outbox-pattern]] — envio assíncrono
-- [[../conceitos-ai/idempotencia-via-unique-parcial]] — dedup de webhook
+- [[conceitos-ai/anthropic-sdk]] — provedor LLM
+- [[conceitos-ai/exclude-using-gist]] — anti-overlap de agendamento
+- [[conceitos-ai/outbox-pattern]] — envio assíncrono
+- [[conceitos-ai/idempotencia-via-unique-parcial]] — dedup de webhook
 
 ## Políticas configuráveis (`ClinicaPolitica`)
 

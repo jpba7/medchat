@@ -8,21 +8,21 @@ tags: []
 
 ## O que rodou hoje
 
-- <atividade>
-- <atividade>
+- {atividade}
+- {atividade}
 
 ## Decisões
 
-- <pequena decisão tomada hoje, candidata a virar nota em decisoes/ se relevante>
+- {pequena decisão tomada hoje, candidata a virar nota em decisoes/ se relevante}
 
 ## Vault candidates sinalizados
 
-- 💡 <item> → ainda não capturado
-- ✅ <item> → virou `[[entidades/<x>]]`
+- 💡 {item} → ainda não capturado
+- ✅ {item} → virou `[[entidades/<x>]]`
 
 ## Próximo passo
 
-- <o que destrava amanhã>
+- {o que destrava amanhã}
 
 ## Notas tocadas hoje
 

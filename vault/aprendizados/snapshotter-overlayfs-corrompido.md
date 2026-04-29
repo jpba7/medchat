@@ -63,4 +63,4 @@ Antes do diagnóstico real, perdi tempo com hipóteses falsas:
 
 ## Notas relacionadas
 
-- [[../entidades/clinica]] — Postgres roda nessa stack
+- [[entidades/clinica]] — Postgres roda nessa stack

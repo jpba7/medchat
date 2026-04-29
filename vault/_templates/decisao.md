@@ -4,7 +4,7 @@ type: decisao
 tags: []
 ---
 
-# Decisão: <título curto>
+# Decisão: {título curto}
 
 > Decisão pequena, fora de ADR formal. ADR vai em `docs/adr/`.
 
@@ -16,21 +16,21 @@ tags: []
 
 ## Opções consideradas
 
-- **A:** <descrição curta> — <prós/contras>
-- **B:** <descrição curta> — <prós/contras>
+- **A:** {descrição curta} — {prós/contras}
+- **B:** {descrição curta} — {prós/contras}
 
 ## Decisão
 
-Escolhemos **<opção>** porque <motivo principal>.
+Escolhemos **{opção}** porque {motivo principal}.
 
 ## Consequências
 
-- <o que muda>
-- <o que continua igual>
+- {o que muda}
+- {o que continua igual}
 
 ## Quando revisitar
 
-<gatilho que faria a decisão ser reavaliada>
+{gatilho que faria a decisão ser reavaliada}
 
 ## Notas relacionadas
 

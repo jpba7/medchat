@@ -4,7 +4,7 @@ type: integracao
 tags: []
 ---
 
-# <Nome da Integração>
+# {Nome da Integração}
 
 > Frase única: o que essa integração faz pelo MedChat.
 
@@ -20,19 +20,19 @@ Em qual ponto do produto essa integração aparece. 1-3 linhas.
 
 ## Configuração por clínica
 
-- Onde mora: <ex.: `ClinicaCanal.config` JSONB>
+- Onde mora: {ex.: `ClinicaCanal.config` JSONB}
 - Campos relevantes: `<campo1>`, `<campo2>`
-- Auth: <ex.: HMAC com `webhook_secret`, OAuth, API key>
+- Auth: {ex.: HMAC com `webhook_secret`, OAuth, API key}
 
 ## Endpoints / eventos importantes
 
 | Endpoint / evento | Direção | Observações |
 |---|---|---|
-| `<endpoint>` | inbound/outbound | <comentário curto> |
+| `<endpoint>` | inbound/outbound | {comentário curto} |
 
 ## Idempotência
 
-- Como o MedChat dedup: <ex.: `(canal_id, external_id)` unique>
+- Como o MedChat dedup: {ex.: `(canal_id, external_id)` unique}
 - O que pode causar duplicata vinda do provedor.
 
 ## Outbox / send
@@ -42,11 +42,11 @@ Em qual ponto do produto essa integração aparece. 1-3 linhas.
 
 ## Gotchas
 
-- <armadilha conhecida>
+- {armadilha conhecida}
 
 ## Migração futura
 
-- <ex.: Evolution → Cloud API quando? Por quê?>
+- {ex.: Evolution → Cloud API quando? Por quê?}
 
 ## Notas relacionadas
 
@@ -55,4 +55,4 @@ Em qual ponto do produto essa integração aparece. 1-3 linhas.
 
 ## Referências externas
 
-- <docs oficiais do provedor>
+- {docs oficiais do provedor}
