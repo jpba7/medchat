@@ -1,0 +1,18 @@
+{
+  "alwaysUpdateLinks": true,
+  "newLinkFormat": "shortest",
+  "useMarkdownLinks": false,
+  "newFileLocation": "root",
+  "userIgnoreFilters": [
+    "_templates/",
+    "apps/",
+    "medchat/",
+    "node_modules/",
+    ".venv/",
+    "build/",
+    "dist/",
+    ".claude/worktrees/"
+  ],
+  "promptDelete": true,
+  "showLineNumber": true
+}
