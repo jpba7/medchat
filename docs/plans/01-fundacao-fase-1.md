@@ -334,3 +334,24 @@ docker run --env-file .env.prod.example medchat:fase1  # boot sem erro
 ```
 
 Se todos os checks passam, Fase 1 está fechada e podemos iniciar Fase 2.
+
+---
+
+## Follow-ups pós-Fase 1
+
+Itens de qualidade/DX que entram na fila depois da Fase 1 fechar — não bloqueiam declaração de vitória, mas precisam acontecer antes da Fase 2 sair do skeleton.
+
+### Vault Obsidian — integração definitiva
+
+O vault em `vault/` foi criado nesta fase como base de conhecimento atômico (PRs #1-#5), mas o render no Obsidian ainda mostra **ghost nodes no graph view** e dispara erro **"Folder already exists"** ao clicar. Causa raiz já diagnosticada: markdown links `[texto](../path)` apontando pra fora do vault (`CLAUDE.md`, `docs/`, `apps/*/models.py`, `.claude/commands/`) — Obsidian cataloga todos os links, não só wiki-links, e cria ghost pra alvos que saem da raiz do vault. PRs anteriores resolveram parcialmente (frontmatter, wiki-links com placeholders nos templates), mas a parte dos markdown links externos segue aberta.
+
+**Tarefa:** rever a integração com Obsidian inteira, replicando o padrão usado no repositório **RKFA / Real Café** — vault de referência que motivou este vault e que opera limpo no Obsidian. Avaliar a convenção de paths e organização que ele usa pra (a) evitar links pra fora do vault e (b) manter rastreabilidade pro código.
+
+**Sintomas a zerar:**
+
+- Graph view sem ghost nodes (`models.py`, `CLAUDE`, `0002-rls-vs-schema`, `capture`, etc.).
+- Click em qualquer node abre a nota existente, sem erro de filesystem.
+- Templates não geram unresolved wiki-links nem markdown links com `..`.
+- `MOC.md` deixa de prescrever a anti-prática `[texto](../path/fora/do/vault)`.
+
+**Quando fazer:** entre Fase 1 fechada e início de Fase 2. Não bloqueia código, mas bloqueia uso pleno do vault como referência durante o desenvolvimento.
