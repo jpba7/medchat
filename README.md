@@ -39,4 +39,4 @@ SaaS B2B de secretária virtual com IA para clínicas médicas. Multi-tenant, Wh
 
 ## Histórico
 
-Este projeto começou como prova-de-conceito em n8n no diretório `C:\Users\peedr\n8n-automations\` (workflow `0O13PjgBKcONHd0F` na instância Cloudfy `unknownserval-n8n.cloudfy.live`). A revisão concluiu que Django+Postgres é a stack certa para o produto que estamos construindo (multi-tenant SaaS regulado, com observabilidade e testes). A pasta n8n original fica intocada como referência histórica — ver [`docs/context/04-historico-n8n.md`](docs/context/04-historico-n8n.md).
+Este projeto começou como prova-de-conceito em n8n no repositório `n8n-automations` (workflow na instância Cloudfy). A revisão concluiu que Django+Postgres é a stack certa para o produto que estamos construindo (tenho familiaridade, multi-tenant SaaS regulado, com observabilidade e testes). A pasta n8n original ficou intocada como referência histórica — ver [`docs/context/04-historico-n8n.md`](docs/context/04-historico-n8n.md).
